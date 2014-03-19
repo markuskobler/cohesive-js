@@ -1,0 +1,18 @@
+{
+    "name": "cohesive-js",
+    "version": "0.5.0",
+    "description":"Fast, Functional and Modular JavaScript library designed for a modern web.",
+    "main":"dist/cohesive.js",
+    "ignore":[
+        ".gitignore",
+        ".jshintrc",
+        "karma.conf.js",
+        "package.json",
+        "test",
+        "README.md",
+        "LICENCE"
+    ],
+    "keywords": [
+        "cohesive", "cohesive.io", "closure", "es6"
+    ]
+}

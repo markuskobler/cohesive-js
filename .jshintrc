@@ -1,0 +1,8 @@
+{
+    "globals": [
+        "default"
+    ],
+    "asi": true,
+    "esnext":true,
+    "sub":true
+}

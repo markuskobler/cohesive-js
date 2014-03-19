@@ -1,0 +1,48 @@
+{
+    "name": "cohesive-js",
+    "version": "0.5.0",
+    "description": "Fast, Functional and Modular JavaScript library designed for a modern web.",
+    "homepage": "http://github.com/cohesiveio/cohesive.js",
+    "license": "Apache 2.0",
+    "keywords":[ "cohesive", "cohesive.io", "closure", "es6" ],
+    "main":"./dist/lib/base.js",
+    "directories": {
+        "lib": "./lib"
+    },
+    "scripts": {
+        "test": "jshint lib && gulp test"
+    },
+    "devDependencies": {
+        "es6-module-transpiler": "0.3.x",
+        "jshint": "2.4.x",
+        "mocha": "1.18.x",
+        "chai": "1.9.x",
+        "chai-as-promised": "4.1.x",
+        "istanbul": "0.2.x",
+        "gulp": "3.5.x",
+        "gulp-uglify":"0.2.x",
+        "gulp-closure-compiler": "0.1.x",
+        "gulp-es6-module-transpiler":"0.1.x",
+        "gulp-karma": "0.0.4",
+        "gulp-concat": "2.2.x",
+        "gulp-header":"1.0.x",
+        "karma": "0.12.x",
+        "karma-mocha": "0.1.x",
+        "karma-chai": "0.1.x",
+        "karma-coverage": "0.2.x",
+        "karma-teamcity-reporter": "0.1.x",
+        "karma-chrome-launcher": "0.1.x",
+        "karma-firefox-launcher": "0.1.x",
+        "karma-phantomjs-launcher": "0.1.x",
+        "karma-sauce-launcher": "0.2.x",
+        "closurecompiler": "1.3.x"
+    },
+    "bugs": "http://github.com/cohesiveio/cohesive.js/issues",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/cohesiveio/cohesive.js.git"
+    },
+    "engines": {
+        "node": ">= 0.10.0"
+    }
+}
