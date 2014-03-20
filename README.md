@@ -1,4 +1,5 @@
-= Cohesive.js
+Cohesive.js
+===========
 
 Fast, Functional and Modular JavaScript library designed for a modern web.
 
