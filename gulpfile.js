@@ -38,7 +38,7 @@ gulp.task('test', ['build'], function() {
     .pipe(karma({
       configFile: 'karma.conf.js',
       action: 'run',
-      browsers:["Chrome", "Firefox", "PhantomJS"]
+      browsers:["PhantomJS"]
     }));
 })
 
