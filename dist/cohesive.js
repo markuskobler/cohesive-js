@@ -16,6 +16,14 @@
    * @param {*} value
    * @return {boolean}
    */
+  cohesive.isUndefined = function(value) {
+    return typeof value === void 0;
+  };
+
+  /**
+   * @param {*} value
+   * @return {boolean}
+   */
   cohesive.isString = function(value) {
     return typeof value === 'string'
   };
@@ -168,7 +176,7 @@
     return function $partialRight() {
       var newArgs = Array.prototype.slice.call(arguments, 0)
       newArgs.push.apply(newArgs, args)
-      return fn.apply(null, newArgs)
+      return fn.apply(this, newArgs)
     }
   };
 
@@ -190,6 +198,28 @@
     }
   };
 
+  /** @const */
+  var _waiting = {};
+
+  /**
+   * @param {!function(?):*} fn
+   * @param {...*} var_args
+   * @return {!function(?):?}
+   */
+  cohesive.once = function(fn, var_args) {
+      var args = Array.prototype.slice.call(arguments, 1),
+          result = _waiting       
+      return function() {
+          if (result !== _waiting) {
+              return result
+          }
+          args.push.apply(args, arguments)
+          result = fn.apply(this, args)
+          fn = cohesive.once
+          args = void 0
+          return result
+      }
+  };
 
   /**
    * See {@link http://tinyurl.com/developer-mozilla-org-array-filter}
@@ -464,6 +494,13 @@
   };
 
   /**
+   * @return {!number}
+   */
+  cohesive.start = function() {
+      return _start
+  };
+
+  /**
    * @return {number} Current time in milliseconds since the epoch.
    */
   cohesive.now = (Date.now) || (function $$now() { return +new Date(); });
@@ -496,6 +533,9 @@
    * @private
    */
   cohesive.Timer.prototype._stop = -1
+
+
+
 
   /** @return {!number} */
   cohesive.Timer.prototype.since = function() {

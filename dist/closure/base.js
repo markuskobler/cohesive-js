@@ -16,6 +16,14 @@ goog.scope(function() {
    * @param {*} value
    * @return {boolean}
    */
+  cohesive.isUndefined = function(value) {
+    return typeof value === void 0;
+  };
+
+  /**
+   * @param {*} value
+   * @return {boolean}
+   */
   cohesive.isString = function(value) {
     return typeof value === 'string'
   };
@@ -190,6 +198,28 @@ goog.scope(function() {
     }
   };
 
+  /** @const */
+  var _waiting = {};
+
+  /**
+   * @param {!function(?):*} fn
+   * @param {...*} var_args
+   * @return {!function(?):?}
+   */
+  cohesive.once = function(fn, var_args) {
+    var args = Array.prototype.slice.call(arguments, 1),
+        result = _waiting       
+    return function() {
+      if (result !== _waiting) {
+        return result
+      }
+      args.push.apply(args, arguments)
+      result = fn.apply(this, args)
+      fn = cohesive.once
+      args = void 0
+      return result
+    }
+  };
 
   /**
    * See {@link http://tinyurl.com/developer-mozilla-org-array-filter}
@@ -461,6 +491,13 @@ goog.scope(function() {
     if (!(opt_ifDate && _perfStart)) {
       _start = time
     }
+  };
+
+  /**
+   * @return {!number}
+   */
+  cohesive.start = function() {
+    return _start
   };
 
   /**
