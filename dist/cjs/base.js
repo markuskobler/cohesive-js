@@ -1,52 +1,288 @@
-/**
- * cohesive.js | Copyright 2014 Markus Kobler | 3-clause BSD license
- * @fileoverview Base utils
- */
-var _win = typeof window !== 'undefined' && window
-var _perf = _win && (_win.performance || _win["msPerformance"])
-var _perfStart = _perf && _perf.timing && _perf.timing.domLoading
-var _start = _perfStart || new Date().getTime()
+"use strict";
+
+Object.seal(Object.defineProperties(exports, {
+  isUndefined: {
+    get: function() {
+      return isUndefined;
+    },
+
+    enumerable: true
+  },
+
+  isString: {
+    get: function() {
+      return isString;
+    },
+
+    enumerable: true
+  },
+
+  isNumber: {
+    get: function() {
+      return isNumber;
+    },
+
+    enumerable: true
+  },
+
+  isObject: {
+    get: function() {
+      return isObject;
+    },
+
+    enumerable: true
+  },
+
+  isFunction: {
+    get: function() {
+      return isFunction;
+    },
+
+    enumerable: true
+  },
+
+  isArray: {
+    get: function() {
+      return isArray;
+    },
+
+    enumerable: true
+  },
+
+  isArrayLike: {
+    get: function() {
+      return isArrayLike;
+    },
+
+    enumerable: true
+  },
+
+  noop: {
+    get: function() {
+      return noop;
+    },
+
+    enumerable: true
+  },
+
+  bind: {
+    get: function() {
+      return bind;
+    },
+
+    enumerable: true
+  },
+
+  curry: {
+    get: function() {
+      return curry;
+    },
+
+    enumerable: true
+  },
+
+  partial: {
+    get: function() {
+      return partial;
+    },
+
+    enumerable: true
+  },
+
+  bindPartial: {
+    get: function() {
+      return bindPartial;
+    },
+
+    enumerable: true
+  },
+
+  partialRight: {
+    get: function() {
+      return partialRight;
+    },
+
+    enumerable: true
+  },
+
+  compose: {
+    get: function() {
+      return compose;
+    },
+
+    enumerable: true
+  },
+
+  once: {
+    get: function() {
+      return once;
+    },
+
+    enumerable: true
+  },
+
+  filter: {
+    get: function() {
+      return filter;
+    },
+
+    enumerable: true
+  },
+
+  bindFilter: {
+    get: function() {
+      return bindFilter;
+    },
+
+    enumerable: true
+  },
+
+  map: {
+    get: function() {
+      return map;
+    },
+
+    enumerable: true
+  },
+
+  bindMap: {
+    get: function() {
+      return bindMap;
+    },
+
+    enumerable: true
+  },
+
+  forEach: {
+    get: function() {
+      return forEach;
+    },
+
+    enumerable: true
+  },
+
+  bindForEach: {
+    get: function() {
+      return bindForEach;
+    },
+
+    enumerable: true
+  },
+
+  find: {
+    get: function() {
+      return find;
+    },
+
+    enumerable: true
+  },
+
+  toArray: {
+    get: function() {
+      return toArray;
+    },
+
+    enumerable: true
+  },
+
+  indexOf: {
+    get: function() {
+      return indexOf;
+    },
+
+    enumerable: true
+  },
+
+  extend: {
+    get: function() {
+      return extend;
+    },
+
+    enumerable: true
+  },
+
+  overrideStart: {
+    get: function() {
+      return overrideStart;
+    },
+
+    enumerable: true
+  },
+
+  start: {
+    get: function() {
+      return start;
+    },
+
+    enumerable: true
+  },
+
+  now: {
+    get: function() {
+      return now;
+    },
+
+    enumerable: true
+  },
+
+  since: {
+    get: function() {
+      return since;
+    },
+
+    enumerable: true
+  },
+
+  Timer: {
+    get: function() {
+      return Timer;
+    },
+
+    enumerable: true
+  },
+
+  escapeHTML: {
+    get: function() {
+      return escapeHTML;
+    },
+
+    enumerable: true
+  },
+
+  unescapeHTML: {
+    get: function() {
+      return unescapeHTML;
+    },
+
+    enumerable: true
+  }
+}));
+
+var _win = typeof window !== 'undefined' && window;
+var _perf = _win && (_win.performance || _win["msPerformance"]);
+var _perfStart = _perf && _perf.timing && _perf.timing.domLoading;
+var _start = _perfStart || new Date().getTime();
 var _slice = Array.prototype.slice;
 
-/**
- * @param {*} value
- * @return {boolean}
- */
-export function isUndefined(value) {
+function isUndefined(value) {
   return value === void 0
 }
 
-/**
- * @param {*} value
- * @return {boolean}
- */
-export function isString(value) {
+function isString(value) {
   return typeof value === 'string'
 }
 
-/**
- * @param {*} value
- * @return {boolean}
- */
-export function isNumber(value) {
+function isNumber(value) {
   return typeof value === 'number'
 }
 
-/**
- * @param {*} val
- * @return {boolean}
- */
-export function isObject(val) {
+function isObject(val) {
   var type = typeof val
   return (type === 'object' && val !== null || type === 'function')
 }
 
-/**
- * @param {*} val
- * @return {boolean}
- */
-export function isFunction(val) {
-  var className = Object.prototype.toString.call(/** @type {Object} */(val))
+function isFunction(val) {
+  var className = Object.prototype.toString.call(/** @type {Object} */ (val))
   return className === '[object Function]' || !!(val && typeof val.call !== 'undefined' && typeof val.propertyIsEnumerable !== 'undefined' && !val.propertyIsEnumerable('call'))
 }
 
@@ -58,20 +294,12 @@ var isArray = typeof Array.isArray === 'function' ?
   Array.isArray : function cohesive$isArray(value) {
     return '[object Array]' === Object.prototype.toString.call(/** @type {Object} */ (value))
   }
-export {isArray};
-
-/**
- * @param {*} val
- * @return {boolean}
- */
-export function isArrayLike(val) {
+function isArrayLike(val) {
   var type = typeof val
   return type === 'array' || ((type === 'object' && val !== null || type === 'function') && typeof val.length === 'number')
 }
 
-/**
- */
-export function noop() {}
+function noop() {}
 
 /**
  * @param {?function(this:T, ...)} fn
@@ -92,16 +320,7 @@ var bind = Function.prototype.bind ?
       return fn.apply(selfObj, newArgs)
     }
   }
-export {bind}
-
-/**
- * @param {!function(this:S, ?): ?} fn
- * @param {S=} opt_obj
- * @param {number=} opt_arity
- * @return {!function(?):?}
- * @template S
- */
-export function curry(fn, opt_obj, opt_arity) {
+function curry(fn, opt_obj, opt_arity) {
   var len = (+opt_arity || fn.length)
   function accumulator(args, opt_newArgs) {
     if (!opt_newArgs) return function() { return accumulator(args, arguments) }
@@ -114,12 +333,7 @@ export function curry(fn, opt_obj, opt_arity) {
   return function cohesive$curry() { return accumulator([], arguments) }
 }
 
-/**
- * @param {!function(?):?} fn
- * @param {...*} var_args
- * @return {!function(?):?}
- */
-export function partial(fn/*, var_args*/) {
+function partial(fn/*, var_args*/) {
   var args = _slice.call(arguments, 1)
   return function cohesive$partial() {
     var newArgs = _slice.call(args, 0)
@@ -128,14 +342,7 @@ export function partial(fn/*, var_args*/) {
   }
 }
 
-/**
- * @param {!function(this:T,?): ?} fn
- * @param {!T} selfObj
- * @param {...*} var_args
- * @return {!function(?):?}
- * @template T
- */
-export function bindPartial(fn, selfObj/*, var_args*/) {
+function bindPartial(fn, selfObj/*, var_args*/) {
   var args = _slice.call(arguments, 2)
   return function cohesive$bindPartial() {
     var newArgs = _slice.call(args, 0)
@@ -144,12 +351,7 @@ export function bindPartial(fn, selfObj/*, var_args*/) {
   }
 }
 
-/**
- * @param {!function(?):?} fn
- * @param {...*} var_args
- * @return {!function(?):?}
- */
-export function partialRight(fn/*, var_args*/) {
+function partialRight(fn/*, var_args*/) {
   var args = _slice.call(arguments, 1)
   return function cohesive$partialRight() {
     var newArgs = _slice.call(arguments, 0)
@@ -158,13 +360,7 @@ export function partialRight(fn/*, var_args*/) {
   }
 }
 
-/**
- * @param {!function(?):*} fn1
- * @param {!function(?):*} fn2
- * @param {...function(?):*} var_args
- * @return {!function(?):*}
- */
-export function compose(/*fn1, fn2, var_args*/) {
+function compose(/*fn1, fn2, var_args*/) {
   var funcs = arguments
   return function cohesive$compose() {
     var len = funcs.length, args = arguments
@@ -176,12 +372,7 @@ export function compose(/*fn1, fn2, var_args*/) {
 /** @const */
 var _waiting = {}
 
-/**
- * @param {!function(?):*} fn
- * @param {...*} var_args
- * @return {!function(?):?}
- */
-export function once(fn/*, var_args*/) {
+function once(fn/*, var_args*/) {
   var args = _slice.call(arguments, 1), result = _waiting
   return function cohesive$once() {
     if (result !== _waiting) return result
@@ -214,7 +405,6 @@ var filter = Array.prototype.filter ?
     }
     return result
   }
-export {filter}
 
 /**
  * See {@link http://tinyurl.com/developer-mozilla-org-array-filter}
@@ -238,7 +428,6 @@ var bindFilter = Array.prototype.filter ?
     }
     return result
   }
-export {bindFilter}
 
 // TODO add reduce
 /**
@@ -256,7 +445,6 @@ var map = Array.prototype.map ?
     while (++i < len) result[i] = fn(value[i], i, value)
     return result
   }
-export {map}
 
 /**
  * @param {!function(this:S, T, number, ?):?} fn
@@ -273,7 +461,6 @@ var bindMap = Array.prototype.map ?
     while (++i < len) result[i] = fn.call(selfObj, value[i], i, value)
     return result
   }
-export {bindMap}
 
 /**
  * See {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach}
@@ -291,7 +478,6 @@ var forEach = Array.prototype.forEach ?
       if (i in value) fn(value[i], i, value)
     }
   }
-export {forEach}
 
 /**
  * @param {!function(this: S, T, number, ?): ?} fn
@@ -308,15 +494,7 @@ var bindForEach = Array.prototype.forEach ?
       if (i in value) fn.call(selfObj, value[i], i, value)
     }
   }
-export {bindForEach}
-
-/**
- * @param {!function(T, number, ?): ?} fn
- * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
- * @return {*}
- * @template T
- */
-export function find(fn, value) {
+function find(fn, value) {
   var i = -1, len = value.length >>> 0, tag
   while (++i < len) {
     if (i in value) {
@@ -325,11 +503,7 @@ export function find(fn, value) {
   }
 }
 
-/**
- * @param {!Array|NodeList|Arguments|{length: number}} object
- * @return {!Array}
- */
-export function toArray(object) {
+function toArray(object) {
   var len = object.length >>> 0, rv = new Array(len), i
   if (len > 0) {
     for (i = 0; i < len; i++) rv[i] = object[i]
@@ -358,14 +532,7 @@ var indexOf = Array.prototype.indexOf ?
     }
     return -1
   }
-export {indexOf}
-
-/**
- * @param {Object} target
- * @param {...Object} var_args
- * @return {Object}
- */
-export function extend(target/*, var_args*/) {
+function extend(target/*, var_args*/) {
   var key, source, i, j
   for (i = 1; i < arguments.length; i++) {
     source = arguments[i]
@@ -382,39 +549,21 @@ export function extend(target/*, var_args*/) {
   return target
 }
 
-/**
- * @param {!number} time
- * @param {boolean=} opt_ifDate
- */
-export function overrideStart(time, opt_ifDate) {
+function overrideStart(time, opt_ifDate) {
   if (!(opt_ifDate && _perfStart)) _start = time
 }
 
-/**
- * @return {!number}
- */
-export function start() { return _start }
+function start() { return _start }
 
 /**
  * @return {number} Current time in milliseconds since the epoch.
  */
 var now = Date.now || function cohesive$now() { return new Date().getTime() }
-export {now}
-
-/**
- * @param {number=} opt_time
- * @return {number}
- */
-export function since(opt_time) {
+function since(opt_time) {
   return now() -(opt_time || _start)
 }
 
-/**
- * @param {number=} opt_start
- * @final
- * @constructor
- */
-export function Timer(opt_start) {
+function Timer(opt_start) {
   this._start = opt_start || Timer.now()
 }
 
@@ -422,13 +571,13 @@ export function Timer(opt_start) {
  * @type {number}
  * @private
  */
-Timer.prototype._start = 0
+Timer.prototype._start = 0;
 
 /**
  * @type {number}
  * @private
  */
-Timer.prototype._stop = -1
+Timer.prototype._stop = -1;
 
 /** @return {!number} */
 Timer.prototype.since = function() {
@@ -463,11 +612,7 @@ var htmlEscapes = {
   "'": '&#39;'
 }
 
-/**
- * @param {string} value
- * @returns {string}
- */
-export function escapeHTML(value) {
+function escapeHTML(value) {
   return !value ? '' : String(value).replace(/[&<>"']/g, function escapeHTMLChar(match) {
     return htmlEscapes[match]
   })
@@ -482,11 +627,7 @@ var htmlUnescapes = {
   '&#39;':  "'"
 }
 
-/**
- * @param {string} value
- * @returns {string}
- */
-export function unescapeHTML(value) {
+function unescapeHTML(value) {
   return !value ? '' : String(value).replace(/(&amp;|&lt;|&gt;|&quot;|&#39;)/g, function unescapeHTMLChar(match) {
     return htmlUnescapes[match]
   })
@@ -504,5 +645,6 @@ var _OBJECT_PROTOTYPE_FIELDS = [
   'toLocaleString',
   'toString',
   'valueOf'
-]
+];
 
+//# sourceMappingURL=base.js.map

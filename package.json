@@ -10,7 +10,7 @@
         "src": "./lib"
     },
     "scripts": {
-        "test": "jshint lib && gulp test"
+        "test": "jshint lib test && ./node_modules/karma/bin/karma start karma.conf.js --singleRun"
     },
     "devDependencies": {
         "es6-module-transpiler": "0.6.x",

@@ -1,8 +1,43 @@
 {
-    "globals": [
-        "default"
+    "predef":[
+        "window",
+        "document",
+        "navigator",
+        "setTimeout",
+        "clearTimeout",
+        "setImmediate",
+        "Image",
+        "process",
+        "define",
+        "module",
+
+        "describe",
+        "assert",
+        "describe",
+        "it"
     ],
-    "asi": true,
-    "esnext":true,
-    "sub":true
+    "browser"   : false,
+    "node"      : false,
+    "devel"     : false,
+    "esnext"    : true,
+
+    "eqeqeq"    : true,
+    "forin"     : true,
+    "immed"     : true,
+    "newcap"    : true,
+    "noarg"     : true,
+    "nonew"     : true,
+    "regexp"    : true,
+    "undef"     : true,
+    "unused"    : true,
+    "trailing"  : true,
+    "expr"      : true,
+    "iterator"  : true,
+    
+    "debug"     : true,
+    "eqnull"    : true,
+    "laxcomma"  : true,
+    "sub"       : true,
+
+    "asi": true
 }

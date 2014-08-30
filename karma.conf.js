@@ -2,7 +2,7 @@ module.exports = function(config, options) {
   config.set({
     frameworks: ['mocha','chai'],
     files: [
-      'dist/**/*.js',
+      'dist/cohesive.js',
       'test/**/*.js'
     ],
 
@@ -11,8 +11,8 @@ module.exports = function(config, options) {
     autoWatch: true,
     captureTimeout: 60000,
     singleRun: false,
-    browsers: ['Chrome'], // 'Firefox', 'PhantomJS'
-    
+    browsers: ['Chrome', 'Firefox', 'PhantomJS'],
+
     sauceLabs: {
       testName: 'cohesive.js',
       startConnect: true

@@ -1,3 +1,4 @@
+/* global cohesive */
 describe('cohesive.js base', function() {
   it('should expose cohesive in the global path', function() {
     assert.isNotNull(cohesive)
@@ -31,7 +32,7 @@ describe('cohesive.js base', function() {
 
   describe('#isObject', function() {
     it('should test for valid objects', function() {
-      var isObject = cohesive.isObject 
+      var isObject = cohesive.isObject
       function Func() {}
 
       assert.isTrue(isObject({}))
@@ -49,7 +50,7 @@ describe('cohesive.js base', function() {
 
   describe('#isFunction', function() {
     it('should test for valid functions', function() {
-      var isFunction = cohesive.isFunction 
+      var isFunction = cohesive.isFunction
       function Func() {}
 
       assert.isTrue(isFunction(Func))
@@ -61,10 +62,7 @@ describe('cohesive.js base', function() {
       assert.isFalse(isFunction(1))
       assert.isFalse(isFunction(Number(1)))
       assert.isFalse(isFunction(false))
-
-      assert.throw(function() {
-        assert.isFalse(isFunction(void(0)))
-      })
+      assert.isFalse(isFunction(void(0)))
 
     });
   })
@@ -89,16 +87,16 @@ describe('cohesive.js base', function() {
 
   describe('#bind', function() {
     it('should bind a function to an object', function() {
-      var foo = {bar:"baz"}      
+      var foo = {bar:"baz"}
 
-      function test(arg1, arg2) {
+      function test() {
         var result = [this.bar], args = Array.prototype.slice.call(arguments, 0)
         return result.push.apply(result, args) && result.join(':')
       }
       var boundTest = cohesive.bind(test, foo)
-      
+
       assert.equal(test(), "")
-      assert.equal(boundTest(), "baz") 
+      assert.equal(boundTest(), "baz")
       assert.equal(boundTest(1), "baz:1")
     })
   })
@@ -107,12 +105,13 @@ describe('cohesive.js base', function() {
     it('should curry a function', function() {
       var foo = {bar:"baz"}
 
+      /* jshint unused: false */
       function test(arg1, arg2) {
-        var result = [this.bar], args = Array.prototype.slice.call(arguments, 0)
+        var result = [this.bar], args = Array.prototype.slice.call(arguments, 0);
         return result.push.apply(result, args) && result.join(':')
       }
       var curryTest = cohesive.curry(test, foo)
-      
+
       assert.isFunction(curryTest())
       assert.isFunction(curryTest(1))
       assert.equal(curryTest(1,2), "baz:1:2")
@@ -120,11 +119,29 @@ describe('cohesive.js base', function() {
       assert.equal(curryTest(1,2,3,4), "baz:1:2")
 
       curryTest = cohesive.curry(test, null, 3)
-      
+
       assert.isFunction(curryTest())
       assert.equal(curryTest(1,2,3), ":1:2:3")
       assert.equal(curryTest(1)(2,3), ":1:2:3")
       assert.equal(curryTest(1,2,3,4), ":1:2:3")
+    })
+  })
+
+  describe('#escapeHTML', function() {
+    it('should escape HTML characters', function() {
+      assert.equal(cohesive.escapeHTML("test"), "test")
+      assert.equal(cohesive.escapeHTML("<&>\"'"), "&lt;&amp;&gt;&quot;&#39;")
+      assert.equal(cohesive.escapeHTML(""), "")
+      assert.equal(cohesive.escapeHTML(null), '')
+    })
+  })
+
+  describe('#unescapeHTML', function() {
+    it('should unescape HTML', function() {
+      assert.equal(cohesive.unescapeHTML("test"), "test")
+      assert.equal(cohesive.unescapeHTML("&lt;&amp;&gt;&quot;&#39;"), "<&>\"'")
+      assert.equal(cohesive.unescapeHTML(""), "")
+      assert.equal(cohesive.unescapeHTML(null), '')
     })
   })
 })

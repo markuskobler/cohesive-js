@@ -1,37 +1,194 @@
-goog.require('cohesive.forEach')
-goog.require('cohesive.indexOf')
-goog.require('cohesive.filter')
-goog.require('cohesive.now')
+"use strict";
 
-goog.provide('cohesive.dom')
-goog.provide('cohesive.dom.listClasses')
-goog.provide('cohesive.dom.containsClass')
-goog.provide('cohesive.dom.setClass')
-goog.provide('cohesive.dom.addClasses')
-goog.provide('cohesive.dom.removeClasses')
-goog.provide('cohesive.dom.toggleClass')
-goog.provide('cohesive.dom.enableClass')
-goog.provide('cohesive.dom.setProperties')
-goog.provide('cohesive.dom.setText')
-goog.provide('cohesive.dom.setData')
-goog.provide('cohesive.dom.getAllData')
-goog.provide('cohesive.dom.hasData')
-goog.provide('cohesive.dom.removeData')
-goog.provide('cohesive.dom.queryByClass')
-goog.provide('cohesive.dom.queryParentsByClass')
-goog.provide('cohesive.dom.focus')
-goog.provide('cohesive.dom.requestAnimationFrame')
-goog.provide('cohesive.dom.cancelAnimationFrame')
-goog.provide('cohesive.dom.listener')
-goog.provide('cohesive.dom.throttledListener')
+Object.seal(Object.defineProperties(exports, {
+  listClasses: {
+    get: function() {
+      return listClasses;
+    },
 
-goog.scope(function() {
-var forEach = cohesive.forEach;
-var indexOf = cohesive.indexOf;
-var filter = cohesive.filter;
-var now = cohesive.now;
+    enumerable: true
+  },
 
-var _hasClassList = !!window['domTokenList']
+  containsClass: {
+    get: function() {
+      return containsClass;
+    },
+
+    enumerable: true
+  },
+
+  setClass: {
+    get: function() {
+      return setClass;
+    },
+
+    enumerable: true
+  },
+
+  addClass: {
+    get: function() {
+      return addClass;
+    },
+
+    enumerable: true
+  },
+
+  addClasses: {
+    get: function() {
+      return addClasses;
+    },
+
+    enumerable: true
+  },
+
+  removeClass: {
+    get: function() {
+      return removeClass;
+    },
+
+    enumerable: true
+  },
+
+  removeClasses: {
+    get: function() {
+      return removeClasses;
+    },
+
+    enumerable: true
+  },
+
+  toggleClass: {
+    get: function() {
+      return toggleClass;
+    },
+
+    enumerable: true
+  },
+
+  enableClass: {
+    get: function() {
+      return enableClass;
+    },
+
+    enumerable: true
+  },
+
+  setProperties: {
+    get: function() {
+      return setProperties;
+    },
+
+    enumerable: true
+  },
+
+  setText: {
+    get: function() {
+      return setText;
+    },
+
+    enumerable: true
+  },
+
+  setData: {
+    get: function() {
+      return setData;
+    },
+
+    enumerable: true
+  },
+
+  getData: {
+    get: function() {
+      return getData;
+    },
+
+    enumerable: true
+  },
+
+  removeData: {
+    get: function() {
+      return removeData;
+    },
+
+    enumerable: true
+  },
+
+  hasData: {
+    get: function() {
+      return hasData;
+    },
+
+    enumerable: true
+  },
+
+  getAllData: {
+    get: function() {
+      return getAllData;
+    },
+
+    enumerable: true
+  },
+
+  queryByClass: {
+    get: function() {
+      return queryByClass;
+    },
+
+    enumerable: true
+  },
+
+  queryParentsByClass: {
+    get: function() {
+      return queryParentsByClass;
+    },
+
+    enumerable: true
+  },
+
+  focus: {
+    get: function() {
+      return focus;
+    },
+
+    enumerable: true
+  },
+
+  requestAnimationFrame: {
+    get: function() {
+      return requestAnimationFrame;
+    },
+
+    enumerable: true
+  },
+
+  cancelAnimationFrame: {
+    get: function() {
+      return cancelAnimationFrame;
+    },
+
+    enumerable: true
+  },
+
+  listener: {
+    get: function() {
+      return listener;
+    },
+
+    enumerable: true
+  },
+
+  throttledListener: {
+    get: function() {
+      return throttledListener;
+    },
+
+    enumerable: true
+  }
+}));
+
+var base$$ = require("./base");
+
+var _hasClassList = !!window['domTokenList'];
 
 /**
  * @param {Element} el
@@ -44,7 +201,6 @@ var listClasses = _hasClassList ?
     var className = el.className
     return typeof className === 'string' && className.match(/\S+/g) || []
   }
-cohesive.dom.listClasses = listClasses;
 
 /**
  * @param {Element} el
@@ -54,18 +210,11 @@ var containsClass = _hasClassList ?
   function(el, value) {
     return el.classList.contains(value)
   } : function(el, value) {
-    return ~indexOf(listClasses(el), value)
+    return ~base$$.indexOf(listClasses(el), value)
   }
-cohesive.dom.containsClass = containsClass;
-
-/**
- * @param {Element} el
- * @param {string} value
- */
 function setClass(el, value) {
   el.className = value
 }
-cohesive.dom.setClass = setClass;
 
 /**
  * @param {Element} el
@@ -76,12 +225,11 @@ var addClass = _hasClassList ?
     el.classList.add(value)
   } : function(el, value) {
     var classes = listClasses(el)
-    if ( indexOf(classes,value) < 0 ) {
+    if ( base$$.indexOf(classes,value) < 0 ) {
       classes.push(value)
       el.className = classes.join(' ')
     }
   }
-cohesive.dom.addClass = addClass;
 
 /**
  * @param {Element} el
@@ -89,12 +237,12 @@ cohesive.dom.addClass = addClass;
  */
 var addClasses =_hasClassList ?
   function(el, values) {
-    forEach(function(value) { el.classList.add(value) }, values)
+    base$$.forEach(function(value) { el.classList.add(value) }, values)
   } : function(el, values) {
     var classMap = {}, v
     function setTrue(value) { classMap[value] = true }
-    forEach(setTrue, listClasses(el))
-    forEach(setTrue, values)
+    base$$.forEach(setTrue, listClasses(el))
+    base$$.forEach(setTrue, values)
     el.className = ''
     for (v in classMap) {
       if (v in classMap) {
@@ -102,7 +250,7 @@ var addClasses =_hasClassList ?
       }
     }
   }
-cohesive.dom.addClasses = addClasses;
+
 
 /**
  * @param {Element} el
@@ -112,10 +260,9 @@ var removeClass = _hasClassList ?
   function(el, value) {
     el.classList.remove(value)
   } : function(el, value) {
-    var classes = listClasses(el), index = indexOf(classes, value)
+    var classes = listClasses(el), index = base$$.indexOf(classes, value)
     if ( ~index ) el.className = classes.splice(index, 1).join(' ')
   }
-cohesive.dom.removeClass = removeClass;
 
 /**
  * @param {Element} el
@@ -123,11 +270,10 @@ cohesive.dom.removeClass = removeClass;
  */
 var removeClasses = _hasClassList ?
   function(el, values) {
-    forEach(function(value) { el.classList.remove(value) }, values)
+    base$$.forEach(function(value) { el.classList.remove(value) }, values)
   } : function(el, values) {
-    el.className = filter(function(value) { return indexOf(values, value) < 0 }, listClasses(el)).join(' ')
+    el.className = base$$.filter(function(value) { return base$$.indexOf(values, value) < 0 }, listClasses(el)).join(' ')
   }
-cohesive.dom.removeClasses = removeClasses;
 
 /**
  * @param {Element} el
@@ -137,10 +283,10 @@ var toggleClass = _hasClassList ?
   function(el, value) {
     el.classList.toggle(value)
   } : function(el, value) {
-    var classes = el.className.split(/\S+/g), index = indexOf(classes, value)
+    var classes = el.className.split(/\S+/g), index = base$$.indexOf(classes, value)
     el.className = (~index ? classes.splice(index, 1) : classes.push(value)).join(' ')
   }
-cohesive.dom.toggleClass = toggleClass;
+
 
 /**
  * @param {Element} el
@@ -154,12 +300,6 @@ var enableClass = function(el, value, opt_enabled) {
     removeClass(el, value)
   }
 }
-cohesive.dom.enableClass = enableClass;
-
-/**
- * @param {Element} el
- * @param {Object} properties
- */
 function setProperties(el, properties) {
   for (var key in properties) {
     if (key in properties) {
@@ -180,7 +320,6 @@ function setProperties(el, properties) {
     }
   }
 }
-cohesive.dom.setProperties = setProperties;
 
 /**
  * @type {Object}
@@ -200,10 +339,6 @@ var DIRECT_ATTRIBUTE_MAP = {
   'width': 'width'
 }
 
-/**
- * @param {Node} node
- * @param {string|number} text
- */
 function setText(node, text) {
   if ('textContent' in node) {
     node.textContent = text;
@@ -223,13 +358,7 @@ function setText(node, text) {
   }
   return node
 }
-cohesive.dom.setText = setText;
 
-/**
- * @param {Element} el
- * @param {string} key
- * @param {string} value
- */
 function setData(el, key, value) {
   if (el.dataset) {
     el.dataset[key] = value;
@@ -237,13 +366,7 @@ function setData(el, key, value) {
     el.setAttribute('data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase(), value);
   }
 }
-cohesive.dom.setData = setData;
 
-/**
- * @param {Element} el
- * @param {string} key
- * @return {?string}
- */
 function getData(el, key) {
   if (el.dataset) {
     return el.dataset[key];
@@ -251,12 +374,7 @@ function getData(el, key) {
     return el.getAttribute('data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase());
   }
 }
-cohesive.dom.getData = getData;
 
-/**
- * @param {Element} el
- * @param {string} key
- */
 function removeData(el, key) {
   if (el.dataset) {
     delete el.dataset[key];
@@ -264,13 +382,7 @@ function removeData(el, key) {
     el.removeAttribute('data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase());
   }
 }
-cohesive.dom.removeData = removeData;
 
-/**
- * @param {Element} el
- * @param {string} key
- * @return {boolean}
- */
 function hasData(el, key) {
   if (el.dataset) {
     return key in el.dataset;
@@ -280,12 +392,7 @@ function hasData(el, key) {
     return !!(el.getAttribute('data-' + key.replace(/([A-Z])/g, '-$1').toLowerCase()));
   }
 }
-cohesive.dom.hasData = hasData;
 
-/**
- * @param {!Element} el
- * @return {!Object}
- */
 function getAllData(el) {
   if (el.dataset) {
     return el.dataset;
@@ -293,25 +400,18 @@ function getAllData(el) {
     var dataset = {}, attributes = el.attributes, i;
     for (i = 0; i < attributes.length; ++i) {
       var attribute = attributes[i];
-      if (~indexOf(attribute.name, 'data-')) {
+      if (~base$$.indexOf(attribute.name, 'data-')) {
         dataset[attribute.name.substr(5).replace(/\-([a-z])/g, uppercaseData)] = attribute.value;
       }
     }
     return dataset;
   }
 }
-cohesive.dom.getAllData = getAllData;
 
 function uppercaseData(_, match) {
   return match.toUpperCase();
 }
 
-/**
- * TODO: Needs work
- * @param {string} className
- * @param {Document|Element=} opt_parent
- * @return {{length: number}}
- */
 function queryByClass(className, opt_parent) {
   var parent = opt_parent || document, results, el, name, sNames, len, l, i, c, elements
   if (parent.getElementsByClassName) return parent.getElementsByClassName(className)
@@ -338,27 +438,19 @@ function queryByClass(className, opt_parent) {
   results.length = c
   return results
 }
-cohesive.dom.queryByClass = queryByClass;
 
-/**
- */
 function queryParentsByClass(el, className) {
   while(el) {
     if( containsClass(el, className) ) return el
     el = el.parentElement
   }
 }
-cohesive.dom.queryParentsByClass = queryParentsByClass;
 
-/**
- * @rturn {boolean}
- */
 function focus(el) {
   var f = el && !el.disabled && el.style.display !== 'none' && el.style.visibility !== 'hidden'
   if (f) el.focus()
   return f
 }
-cohesive.dom.focus = focus;
 
 var _rafCallbacks, _raf, _caf;
 if(!/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent)) {
@@ -381,7 +473,7 @@ var requestAnimationFrame = _raf ? _raf.bind(window) : (function() {
   var l = 0, id = 0;
   _rafCallbacks = []
   return function(cb) {
-    var n = now(), f = _rafCallbacks.length === 0, d = 16-(n-l)
+    var n = base$$.now(), f = _rafCallbacks.length === 0, d = 16-(n-l)
     if (d < 0) d = 0
     if (f) {
       _rafCallbacks.push(setTimeout(function() {
@@ -394,8 +486,7 @@ var requestAnimationFrame = _raf ? _raf.bind(window) : (function() {
     _rafCallbacks.push(cb)
     return id
   }
-})()
-cohesive.dom.requestAnimationFrame = requestAnimationFrame;
+})();
 
 /**
  * @param {number} id
@@ -409,17 +500,6 @@ var cancelAnimationFrame = _caf ? _caf.bind(window) : function(id) {
   }
   if (_rafCallbacks.length===1) clearTimeout(_rafCallbacks.pop());
 }
-cohesive.dom.cancelAnimationFrame = cancelAnimationFrame;
-
-/**
- * TODO remove self object...
- * @param {?function(this:T, ...)} cb
- * @param {T} selfObj
- * @param {string} handlerBaseName
- * @param {Element} el
- * @return {!Function}
- * @template T
- */
 function listener(cb, selfObj, handlerBaseName, el) {
   if (!el) el = (selfObj || window);
   var fn = function dom$listener(e){ return cb.call(selfObj || window, e || window['event']) }
@@ -437,16 +517,7 @@ function listener(cb, selfObj, handlerBaseName, el) {
   }
   return fn
 }
-cohesive.dom.listener = listener;
 
-/**
- * @param {?function(this:T, ...)} cb
- * @param {T} selfObj
- * @param {string|Array.<string>} handlerBaseName
- * @param {Element} el
- * @return {!Function}
- * @template T
- */
 function throttledListener(cb, selfObj, handlerBaseName, el) {
   if (!el) el = (selfObj || window);
   var evt, id, fn = function dom$throttledListener(e) {
@@ -473,6 +544,5 @@ function throttledListener(cb, selfObj, handlerBaseName, el) {
   }
   return fn
 }
-cohesive.dom.throttledListener = throttledListener;
 
-})
+//# sourceMappingURL=dom.js.map
