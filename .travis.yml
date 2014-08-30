@@ -1,12 +1,6 @@
 language: node_js
 node_js:
-  - 0.10
-
-
+- 0.1
 notifications:
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/b4d58c9d51c993a7dd45
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: false     # default: false
+  slack:
+    secure: aQEFj8k4JKdmflWLutqsiABdHjYtxNHFw37eUz3EYqIHGvsue88MsuD1NEjAJNumBfSojcsREZN7IauXv6E/o3hzb/23Ng/kGXMA4J/Lrs1fLG5o8JFtvobQFb8euVT1pZhLeUH1ux97Xsf5InltyIH3gcRVvuchfLUyE+oyEeU=
