@@ -351,7 +351,7 @@ function queryParentsByClass(el, className) {
 cohesive.dom.queryParentsByClass = queryParentsByClass;
 
 /**
- * @rturn {boolean}
+ * @return {boolean}
  */
 function focus(el) {
   var f = el && !el.disabled && el.style.display !== 'none' && el.style.visibility !== 'hidden'
@@ -412,27 +412,25 @@ var cancelAnimationFrame = _caf ? _caf.bind(window) : function(id) {
 cohesive.dom.cancelAnimationFrame = cancelAnimationFrame;
 
 /**
- * TODO remove self object...
- * @param {?function(this:T, ...)} cb
- * @param {T} selfObj
- * @param {string} handlerBaseName
  * @param {Element} el
+ * @param {string} type
+ * @param {?function(this:T, ...)} cb
+ * @param {T=} opt_selfObj
  * @return {!Function}
  * @template T
  */
-function listener(cb, selfObj, handlerBaseName, el) {
-  if (!el) el = (selfObj || window);
-  var fn = function dom$listener(e){ return cb.call(selfObj || window, e || window['event']) }
+function listener(el, type, cb, opt_selfObj) {
+  var fn = function dom$listener(e){ return cb.call(opt_selfObj || window, e || window['event']) }
   if (el.addEventListener) {
-    el.addEventListener(handlerBaseName, fn, false)
+    el.addEventListener(type, fn, false)
   } else if (el.detachEvent) {
-    el.attachEvent('on' + handlerBaseName, fn)
+    el.attachEvent('on' + type, fn)
   }
   fn.destroy = function() {
     if (el.addEventListener) {
-      el.removeEventListener(handlerBaseName, fn, false)
+      el.removeEventListener(type, fn, false)
     } else if (el.detachEvent) {
-      el.detachEvent('on' + handlerBaseName, fn)
+      el.detachEvent('on' + type, fn)
     }
   }
   return fn
@@ -440,35 +438,34 @@ function listener(cb, selfObj, handlerBaseName, el) {
 cohesive.dom.listener = listener;
 
 /**
- * @param {?function(this:T, ...)} cb
- * @param {T} selfObj
- * @param {string|Array.<string>} handlerBaseName
  * @param {Element} el
+ * @param {!string} type
+ * @param {?function(this:T, ...)} cb
+ * @param {T=} opt_selfObj
  * @return {!Function}
  * @template T
  */
-function throttledListener(cb, selfObj, handlerBaseName, el) {
-  if (!el) el = (selfObj || window);
+function throttledListener(el, type, cb, opt_selfObj) {
   var evt, id, fn = function dom$throttledListener(e) {
     evt = e || window['event'];
     if(!id) {
       id = requestAnimationFrame(function(t){
         var e = evt; evt = id = void 0
-        cb.call(selfObj, t, e)
+        cb.call(opt_selfObj, t, e)
       })
     }
   }
   if (el.addEventListener) {
-    el.addEventListener(handlerBaseName, fn, false)
+    el.addEventListener(type, fn, false)
   } else if (el.detachEvent) {
-    el.attachEvent('on' + handlerBaseName, fn)
+    el.attachEvent('on' + type, fn)
   }
   fn.destroy = function(){
     if(id) cancelAnimationFrame(id)
     if (el.addEventListener) {
-      el.removeEventListener(handlerBaseName, fn, false)
+      el.removeEventListener(type, fn, false)
     } else if (el.detachEvent) {
-      el.detachEvent('on' + handlerBaseName, fn)
+      el.detachEvent('on' + type, fn)
     }
   }
   return fn

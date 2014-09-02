@@ -29,7 +29,7 @@
     "nonew"     : true,
     "regexp"    : true,
     "undef"     : true,
-    "unused"    : true,
+    "unused"    : false,
     "trailing"  : true,
     "expr"      : true,
     "iterator"  : true,

@@ -27,12 +27,12 @@ var asap = _Observer ? (function() {
     default: a[0].apply(void 0, _slice.call(a, 1))
     }
   }).observe(n,{characterData:true})
-  return function(/* fn, var_args */) {
+  return function(fn, var_args) {
     t.push(_slice.call(arguments, 0))
     if (t.length === 1) n.data = (++i % 2) ? '1' : ''
   }
-}()) : _delay ? (function() {
-  return function(fn /*, var_args*/) {
+}()) : (_delay ? (function() {
+  return function(fn, var_args) {
     var a = _slice.call(arguments, 1)
     _delay(function(){
       switch (a.length) {
@@ -43,14 +43,13 @@ var asap = _Observer ? (function() {
       a = void 0
     })
   }
-}()) : function(fn /*, var_args*/){
+}()) : function(fn, var_args){
   switch (arguments.length) {
   case 0: fn(); break;
   case 1: fn(arguments[0]); break;
   default: fn.apply(void 0, _slice.call(arguments, 1))
   }
-};
-
+});
 cohesive.asap = asap;
 
 })

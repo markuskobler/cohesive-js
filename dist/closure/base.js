@@ -126,9 +126,9 @@ cohesive.noop = noop;
  * @template T
  */
 var bind = Function.prototype.bind ?
-  function cohesive$bind(fn /*, selfObj, var_args */) {
+  function cohesive$bind(fn , selfObj, var_args) {
     return /** @type {!Function} */(fn.call.apply(fn.bind, arguments))
-  } : function cohesive$$bind(fn, selfObj/*, var_args */) {
+  } : function cohesive$$bind(fn, selfObj, var_args) {
     if (arguments.length < 3) return function(){ return fn.apply(selfObj, arguments) }
     var args = _slice.call(arguments, 2)
     return function() {
@@ -166,7 +166,7 @@ cohesive.curry = curry;
  * @param {...*} var_args
  * @return {!function(?):?}
  */
-function partial(fn/*, var_args*/) {
+function partial(fn, var_args) {
   var args = _slice.call(arguments, 1)
   return function cohesive$partial() {
     var newArgs = _slice.call(args, 0)
@@ -184,7 +184,7 @@ cohesive.partial = partial;
  * @return {!function(?):?}
  * @template T
  */
-function bindPartial(fn, selfObj/*, var_args*/) {
+function bindPartial(fn, selfObj, var_args) {
   var args = _slice.call(arguments, 2)
   return function cohesive$bindPartial() {
     var newArgs = _slice.call(args, 0)
@@ -200,7 +200,7 @@ cohesive.bindPartial = bindPartial;
  * @param {...*} var_args
  * @return {!function(?):?}
  */
-function partialRight(fn/*, var_args*/) {
+function partialRight(fn, var_args) {
   var args = _slice.call(arguments, 1)
   return function cohesive$partialRight() {
     var newArgs = _slice.call(arguments, 0)
@@ -217,7 +217,7 @@ cohesive.partialRight = partialRight;
  * @param {...function(?):*} var_args
  * @return {!function(?):*}
  */
-function compose(/*fn1, fn2, var_args*/) {
+function compose(fn1, fn2, var_args) {
   var funcs = arguments
   return function cohesive$compose() {
     var len = funcs.length, args = arguments
@@ -232,11 +232,11 @@ cohesive.compose = compose;
 var _waiting = {}
 
 /**
- * @param {!function(?):*} fn
+ * @param {?function(...)} fn
  * @param {...*} var_args
- * @return {!function(?):?}
+ * @return {!Function}
  */
-function once(fn/*, var_args*/) {
+function once(fn, var_args) {
   var args = _slice.call(arguments, 1), result = _waiting
   return function cohesive$once() {
     if (result !== _waiting) return result
@@ -244,7 +244,7 @@ function once(fn/*, var_args*/) {
     result = fn.apply(this, args)
     fn = once
     args = void 0
-    return result
+    return /** @type {Function}*/(result)
   }
 }
 cohesive.once = once;
@@ -426,7 +426,7 @@ cohesive.indexOf = indexOf;
  * @param {...Object} var_args
  * @return {Object}
  */
-function extend(target/*, var_args*/) {
+function extend(target, var_args) {
   var key, source, i, j
   for (i = 1; i < arguments.length; i++) {
     source = arguments[i]

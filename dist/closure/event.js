@@ -19,9 +19,9 @@ var extend = cohesive.extend;
 
 /**
  * @param {Element|Window} el
- * @param {string|Array.<string>} type
- * @param {!function(?):?} fn
- * @return {!function(?):?}
+ * @param {string} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @return {!function(!Event): (boolean|undefined)}
  */
 function listen(el, type, fn) {
   if (el.addEventListener) {
@@ -37,9 +37,9 @@ cohesive.event.listen = listen;
 
 /**
  * @param {Element|Window} el
- * @param {string|Array.<string>} type
- * @param {!function(?):?} fn
- * @return {!function(?):?}
+ * @param {string} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @return {!function(!Event): (boolean|undefined)}
  */
 function listenOnce(el, type, fn) {
   var detach;
@@ -64,7 +64,7 @@ cohesive.event.listenOnce = listenOnce;
 /**
  * @param {Element|Window} el
  * @param {string|Array.<string>} type
- * @param {!function(?):?} fn
+ * @param {!function(!Event): (boolean|undefined)} fn
  */
 function unlisten(el, type, fn) {
   if (el.addEventListener) {
@@ -78,13 +78,15 @@ function unlisten(el, type, fn) {
 cohesive.event.unlisten = unlisten;
 
 /**
+ * @param {string|Array.<string>} type
+ * @param {!function(string)} fn
  * @private
  */
 function applyListener(type, fn) {
   if (isArray(type)) {
     for (var i=0; i < type.length; i++) fn(type[i])
   } else {
-    fn(type)
+    fn(/** @type {string}*/(type))
   }
 }
 
@@ -119,6 +121,8 @@ Event.prototype.stopPropagation = function() {
 
 
 /**
+ * @param {EventTarget=} opt_parent
+ * @param {Object=} opt_scope
  * @constructor
  */
 function EventTarget(opt_parent, opt_scope) {
@@ -129,13 +133,13 @@ function EventTarget(opt_parent, opt_scope) {
   this._parent = opt_parent;
 
   /**
-   * @type {Object.<string, !Array.<!function(?):?|{handleEvent:function(?):?}>>}
+   * @type {Object.<string, !Array.<!Listener>>}
    * @private
    */
   this._listeners = {};
 
   /**
-   * TODO not sure this is good?
+   *
    */
   this._scope = opt_scope || this;
 }
@@ -163,8 +167,11 @@ EventTarget.prototype.bindEventListeners = function(scope) {
 }
 
 /**
- * @param {!function(?):?} fn
  * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.listen = function(type, fn, opt_scope) {
   if (isArray(type)) {
@@ -178,8 +185,11 @@ EventTarget.prototype.listen = function(type, fn, opt_scope) {
 }
 
 /**
- * @param {!function(?):?} fn
- * @param {string} type
+ * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
   addListener(this._listeners, type.toString(), true, fn, opt_scope)
@@ -187,8 +197,11 @@ EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
 }
 
 /**
- * @param {!function(?):?} fn
  * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
   if (isArray(type)) {
@@ -203,7 +216,7 @@ EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
 
 /**
  * @param {string} type
- * @param {function(?):?|{handleEvent:function(?):?}} listener
+ * @param {!function(!Event): (boolean|undefined)} listener
  */
 EventTarget.prototype.addEventListener = function(type, listener) {
   this.listen(type, listener)
@@ -211,7 +224,7 @@ EventTarget.prototype.addEventListener = function(type, listener) {
 
 /**
  * @param {string} type
- * @param {function(?):?|{handleEvent:function(?):?}} listener
+ * @param {!function(!Event): (boolean|undefined)} listener
  */
 EventTarget.prototype.removeEventListener = function(type, listener) {
   this.unlisten(type, listener)
@@ -224,9 +237,9 @@ EventTarget.prototype.removeEventListener = function(type, listener) {
 EventTarget.prototype.dispatchEvent = function(evt) {
   var ct = this, rv = true, type = evt.type || /** @type {string} */ (evt);
   if (isString(evt)) {
-    evt = new Event(evt, this);
+    evt = new Event(/** @type {string} */(evt), this);
   } else if (!(evt instanceof Event)) {
-    evt = extend(new Event(type, this), evt);
+    evt = /** @type {Event} */(extend(new Event(type, this), /** @type {Object}*/(evt)));
   } else {
     evt.target = evt.target || this;
     evt.currentTarget = this;
@@ -240,7 +253,7 @@ EventTarget.prototype.dispatchEvent = function(evt) {
 }
 
 /**
- * @param {string} opt_type
+ * @param {string=} opt_type
  * @return {number}
  */
 EventTarget.prototype.removeAllListeners = function(opt_type) {
@@ -260,6 +273,7 @@ EventTarget.prototype.removeAllListeners = function(opt_type) {
 /**
  * TODO make sure closure compiler does not squash method name
  * http://www.w3.org/TR/DOM-Level-2-Events/eventss.html#Events-EventListener
+ * @param {Event} evt
  */
 EventTarget.prototype.handleEvent = function(evt) {
   this.dispatchEvent(evt)
@@ -276,12 +290,27 @@ EventTarget.prototype.dispose = function() {
 
 
 /**
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  * @constructor
  */
 function Listener(once, fn, opt_scope) {
+  /**
+   *
+   */
   this._fn = fn;
+
+  /**
+   * @type {boolean}
+   */
   this._once = !!once;
+
+  /**
+   *
+   */
   this._scope = opt_scope;
 }
 
@@ -295,6 +324,12 @@ Listener.prototype.dispose = function() {
 }
 
 /**
+ * @param {Object.<string, !Array.<!Listener>>} listeners
+ * @param {string} type
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  */
 function addListener(listeners, type, once, fn, opt_scope) {
@@ -303,7 +338,7 @@ function addListener(listeners, type, once, fn, opt_scope) {
     listeners[type] = [new Listener(once, fn, opt_scope)]
     return fn
   }
-  l = lookupListener();
+  l = lookupListener(tl, fn, opt_scope);
   if (!l) {
     tl.push(new Listener(once, fn, opt_scope));
   } else if (!once) {
@@ -313,6 +348,12 @@ function addListener(listeners, type, once, fn, opt_scope) {
 }
 
 /**
+ * @param {Object.<string, !Array.<!Listener>>} listeners
+ * @param {string} type
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  */
 function removeListener(listeners, type, once, fn, opt_scope) {
@@ -333,7 +374,11 @@ function removeListener(listeners, type, once, fn, opt_scope) {
 }
 
 /**
+ * @param {!Array.<!Listener>} listeners
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
  * @private
+ * @template T
  */
 function lookupListener(listeners, fn, opt_scope) {
   for (var i = 0; i < listeners.length; ++i) {
@@ -345,6 +390,8 @@ function lookupListener(listeners, fn, opt_scope) {
 }
 
 /**
+ * @param {string} type
+ * @param {Event} evt
  * @private
  */
 function fireListeners(type, evt) {
