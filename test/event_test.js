@@ -1,3 +1,4 @@
+/* global cohesive */
 describe('cohesive.event', function() {
 
   var event = cohesive.event
@@ -8,8 +9,7 @@ describe('cohesive.event', function() {
 
   describe('#escapeHTML', function() {
     it('should escape HTML characters', function() {
-      
+
     })
   })
-
 })

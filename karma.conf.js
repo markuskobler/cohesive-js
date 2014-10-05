@@ -3,7 +3,7 @@ module.exports = function(config, options) {
     frameworks: ['mocha','chai'],
     files: [
       'dist/cohesive.js',
-      'test/**/*.js'
+      'test/**/*_test.js'
     ],
 
     reporters: ['dots'],
