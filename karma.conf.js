@@ -1,17 +1,23 @@
 module.exports = function(config, options) {
   config.set({
     frameworks: ['mocha','chai'],
+
     files: [
       'dist/cohesive.js',
-      'test/**/*_test.js'
+      'test/common/*_test.js',
+      'test/browser/*_test.js'
     ],
 
-    reporters: ['dots'],
+    preprocessors: { 'dist/cohesive.js': ['coverage'] },
+
+    reporters: ['dots', 'coverage'],
     logLevel: config.LOG_INFO,
     autoWatch: true,
     captureTimeout: 60000,
     singleRun: false,
     browsers: ['Chrome', 'Firefox', 'PhantomJS'],
+
+    coverageReporter: {  dir : 'coverage/', type : 'html' },
 
     sauceLabs: {
       testName: 'cohesive.js',

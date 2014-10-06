@@ -1,19 +1,19 @@
 {
-    "name": "cohesive-js",
+    "name": "cohesive",
     "version": "0.6.0",
     "description": "Fast, Functional and Modular JavaScript library designed for a modern web.",
     "homepage": "http://github.com/cohesiveio/cohesive.js",
     "keywords":[ "cohesive", "cohesive.io", "closure", "es6" ],
-    "main":"./dist/cjs/index.js",
+    "main":"./dist/cjs/node.js",
     "directories": {
         "lib": "./dist/cjs/",
         "src": "./lib"
     },
     "scripts": {
-        "test": "jshint lib test && ./node_modules/karma/bin/karma start karma.conf.js --singleRun"
+        "test": "jshint lib test && ./node_modules/karma/bin/karma start karma.conf.js --singleRun && istanbul cover _mocha -- -r test/node/init.js --reporter spec test/common/*_test.js"
     },
     "devDependencies": {
-        "es6-module-transpiler": "0.6.x",
+        "es6-module-transpiler": "0.8.x",
         "promises-aplus-tests": "2.0.5",
         "jshint": "2.5.x",
         "mocha": "1.21.x",
@@ -29,7 +29,8 @@
         "karma-firefox-launcher": "0.1.x",
         "karma-phantomjs-launcher": "0.1.x",
         "karma-sauce-launcher": "0.2.x",
-        "closurecompiler": "1.3.x"
+        "closurecompiler": "1.3.x",
+        "uglify-js":"2.4.15"
     },
     "license": "BSD-3-Clause",
     "bugs": "http://github.com/cohesiveio/cohesive.js/issues",
@@ -38,6 +39,6 @@
         "url": "https://github.com/cohesiveio/cohesive.js.git"
     },
     "engines": {
-        "node": ">= 0.10.0"
+        "node": ">=0.8.0"
     }
 }

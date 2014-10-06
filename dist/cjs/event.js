@@ -1,59 +1,29 @@
 "use strict";
-
-Object.seal(Object.defineProperties(exports, {
-  listen: {
-    get: function() {
-      return listen;
-    },
-
-    enumerable: true
-  },
-
-  listenOnce: {
-    get: function() {
-      return listenOnce;
-    },
-
-    enumerable: true
-  },
-
-  unlisten: {
-    get: function() {
-      return unlisten;
-    },
-
-    enumerable: true
-  },
-
-  Event: {
-    get: function() {
-      return Event;
-    },
-
-    enumerable: true
-  },
-
-  EventTarget: {
-    get: function() {
-      return EventTarget;
-    },
-
-    enumerable: true
-  }
-}));
-
+;
 var base$$ = require("./base");
+
+/**
+ * @param {Element|Window} el
+ * @param {string} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @return {!function(!Event): (boolean|undefined)}
+ */
 function listen(el, type, fn) {
   if (el.addEventListener) {
     applyListener(type, function(t) { el.addEventListener(t, fn, false) })
   } else if (el.detachEvent) {
     applyListener(type, function(t) { el.attachEvent('on' + t, fn) })
   } else {
-    throw Error("Could not attach listener")
+    throw new Error("Could not attach listener")
   }
   return fn
 }
 
+/**
+ * @param {string} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @return {!function(!Event): (boolean|undefined)}
+ */
 function listenOnce(el, type, fn) {
   var detach;
   if (el.addEventListener) {
@@ -67,33 +37,45 @@ function listenOnce(el, type, fn) {
       el.attachEvent('on' + t, detach)
     })
   } else {
-    throw Error("Could not attach listener")
+    throw new Error("Could not attach listener")
   }
   return detach
 }
 
 
+/**
+ * @param {Element|Window} el
+ * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ */
 function unlisten(el, type, fn) {
   if (el.addEventListener) {
     applyListener(type, function(t) { el.removeEventListener(t, fn, false) })
   } else if (el.detachEvent) {
     applyListener(type, function(t) { el.detachEvent('on' + t, fn) })
   } else {
-    throw Error("Could not deattach listener")
+    throw new Error("Could not deattach listener")
   }
 }
 
 /**
+ * @param {string|Array.<string>} type
+ * @param {!function(string)} fn
  * @private
  */
 function applyListener(type, fn) {
   if (base$$.isArray(type)) {
     for (var i=0; i < type.length; i++) fn(type[i])
   } else {
-    fn(type)
+    fn(/** @type {string}*/(type))
   }
 }
 
+/**
+ * @param {string} type
+ * @param {Object=} opt_target
+ * @constructor
+ */
 function Event(type, opt_target) {
   /** @type {string} */
   this.type = String(type);
@@ -118,6 +100,12 @@ Event.prototype.stopPropagation = function() {
 }
 
 
+/**
+ * TODO Extract into mixin's
+ * @param {EventTarget=} opt_parent
+ * @param {Object=} opt_scope
+ * @constructor
+ */
 function EventTarget(opt_parent, opt_scope) {
   /**
    * @type {EventTarget|undefined}
@@ -132,7 +120,7 @@ function EventTarget(opt_parent, opt_scope) {
   this._listeners = {};
 
   /**
-   * TODO not sure this is good?
+   * @type {Object}
    */
   this._scope = opt_scope || this;
 }
@@ -159,8 +147,11 @@ EventTarget.prototype.bindEventListeners = function(scope) {
 }
 
 /**
- * @param {!function(?):?} fn
  * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.listen = function(type, fn, opt_scope) {
   if (base$$.isArray(type)) {
@@ -174,8 +165,11 @@ EventTarget.prototype.listen = function(type, fn, opt_scope) {
 }
 
 /**
- * @param {!function(?):?} fn
- * @param {string} type
+ * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
   addListener(this._listeners, type.toString(), true, fn, opt_scope)
@@ -183,8 +177,11 @@ EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
 }
 
 /**
- * @param {!function(?):?} fn
  * @param {string|Array.<string>} type
+ * @param {!function(!Event): (boolean|undefined)} fn
+ * @param {T=} opt_scope
+ * @return {EventTarget}
+ * @template T
  */
 EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
   if (base$$.isArray(type)) {
@@ -199,7 +196,7 @@ EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
 
 /**
  * @param {string} type
- * @param {function(?):?|{handleEvent:function(?):?}} listener
+ * @param {!function(!Event): (boolean|undefined)} listener
  */
 EventTarget.prototype.addEventListener = function(type, listener) {
   this.listen(type, listener)
@@ -207,7 +204,7 @@ EventTarget.prototype.addEventListener = function(type, listener) {
 
 /**
  * @param {string} type
- * @param {function(?):?|{handleEvent:function(?):?}} listener
+ * @param {!function(!Event): (boolean|undefined)} listener
  */
 EventTarget.prototype.removeEventListener = function(type, listener) {
   this.unlisten(type, listener)
@@ -220,9 +217,9 @@ EventTarget.prototype.removeEventListener = function(type, listener) {
 EventTarget.prototype.dispatchEvent = function(evt) {
   var ct = this, rv = true, type = evt.type || /** @type {string} */ (evt);
   if (base$$.isString(evt)) {
-    evt = new Event(evt, this);
+    evt = new Event(/** @type {string} */(evt), this);
   } else if (!(evt instanceof Event)) {
-    evt = base$$.extend(new Event(type, this), evt);
+    evt = /** @type {Event} */(base$$.extend(new Event(type, this), /** @type {Object}*/(evt)));
   } else {
     evt.target = evt.target || this;
     evt.currentTarget = this;
@@ -236,7 +233,7 @@ EventTarget.prototype.dispatchEvent = function(evt) {
 }
 
 /**
- * @param {string} opt_type
+ * @param {string=} opt_type
  * @return {number}
  */
 EventTarget.prototype.removeAllListeners = function(opt_type) {
@@ -256,6 +253,7 @@ EventTarget.prototype.removeAllListeners = function(opt_type) {
 /**
  * TODO make sure closure compiler does not squash method name
  * http://www.w3.org/TR/DOM-Level-2-Events/eventss.html#Events-EventListener
+ * @param {Event} evt
  */
 EventTarget.prototype.handleEvent = function(evt) {
   this.dispatchEvent(evt)
@@ -272,12 +270,27 @@ EventTarget.prototype.dispose = function() {
 
 
 /**
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  * @constructor
  */
 function Listener(once, fn, opt_scope) {
+  /**
+   *
+   */
   this._fn = fn;
+
+  /**
+   * @type {boolean}
+   */
   this._once = !!once;
+
+  /**
+   *
+   */
   this._scope = opt_scope;
 }
 
@@ -291,6 +304,12 @@ Listener.prototype.dispose = function() {
 }
 
 /**
+ * @param {Object.<string, !Array.<!Listener>>} listeners
+ * @param {string} type
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  */
 function addListener(listeners, type, once, fn, opt_scope) {
@@ -309,6 +328,12 @@ function addListener(listeners, type, once, fn, opt_scope) {
 }
 
 /**
+ * @param {Object.<string, !Array.<!Listener>>} listeners
+ * @param {string} type
+ * @param {boolean} once
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
+ * @template T
  * @private
  */
 function removeListener(listeners, type, once, fn, opt_scope) {
@@ -329,7 +354,11 @@ function removeListener(listeners, type, once, fn, opt_scope) {
 }
 
 /**
+ * @param {!Array.<!Listener>} listeners
+ * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+ * @param {T=} opt_scope
  * @private
+ * @template T
  */
 function lookupListener(listeners, fn, opt_scope) {
   for (var i = 0; i < listeners.length; ++i) {
@@ -341,6 +370,8 @@ function lookupListener(listeners, fn, opt_scope) {
 }
 
 /**
+ * @param {string} type
+ * @param {Event} evt
  * @private
  */
 function fireListeners(type, evt) {
@@ -355,5 +386,7 @@ function fireListeners(type, evt) {
   }
   return rv;
 }
+
+exports.listen = listen, exports.unlisten = unlisten, exports.listenOnce = listenOnce, exports.Event = Event, exports.EventTarget = EventTarget, exports.Listener = Listener;
 
 //# sourceMappingURL=event.js.map

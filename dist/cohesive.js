@@ -6,26 +6,48 @@
     var base$$_start = base$$_perfStart || new Date().getTime();
     var base$$_slice = Array.prototype.slice;
 
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
     function base$$isUndefined(value) {
       return value === void 0
     }
 
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
     function base$$isString(value) {
       return typeof value === 'string'
     }
 
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
     function base$$isNumber(value) {
       return typeof value === 'number'
     }
 
+    /**
+     * @param {*} val
+     * @return {boolean}
+     */
     function base$$isObject(val) {
       var type = typeof val
       return (type === 'object' && val !== null || type === 'function')
     }
 
+    /**
+     * @param {*} val
+     * @return {boolean}
+     */
     function base$$isFunction(val) {
-      var className = Object.prototype.toString.call(/** @type {Object} */ (val))
-      return className === '[object Function]' || !!(val && typeof val.call !== 'undefined' && typeof val.propertyIsEnumerable !== 'undefined' && !val.propertyIsEnumerable('call'))
+      var className = Object.prototype.toString.call(/** @type {Object} */(val))
+      return className === '[object Function]' || !!(val && typeof val.call !== 'undefined' &&
+                                                     typeof val.propertyIsEnumerable !== 'undefined' &&
+                                                     !val.propertyIsEnumerable('call'))
     }
 
     /**
@@ -33,14 +55,21 @@
      * @return {boolean}
      */
     var base$$isArray = typeof Array.isArray === 'function' ?
-      Array.isArray : function cohesive$isArray(value) {
+      Array.isArray : function base$isArray(value) {
         return '[object Array]' === Object.prototype.toString.call(/** @type {Object} */ (value))
       }
+
+    /**
+     * @param {*} val
+     * @return {boolean}
+     */
     function base$$isArrayLike(val) {
       var type = typeof val
       return type === 'array' || ((type === 'object' && val !== null || type === 'function') && typeof val.length === 'number')
     }
 
+    /**
+     */
     function base$$noop() {}
 
     /**
@@ -51,9 +80,9 @@
      * @template T
      */
     var base$$bind = Function.prototype.bind ?
-      function cohesive$bind(fn /*, selfObj, var_args */) {
+      function $bind(fn, selfObj, var_args) {
         return /** @type {!Function} */(fn.call.apply(fn.bind, arguments))
-      } : function cohesive$$bind(fn, selfObj/*, var_args */) {
+      } : function $$bind(fn, selfObj, var_args) {
         if (arguments.length < 3) return function(){ return fn.apply(selfObj, arguments) }
         var args = base$$_slice.call(arguments, 2)
         return function() {
@@ -62,49 +91,80 @@
           return fn.apply(selfObj, newArgs)
         }
       }
+
+    /**
+     * @param {!function(this:S, ?): ?} fn
+     * @param {S=} opt_obj
+     * @param {number=} opt_arity
+     * @return {!function(?):?}
+     * @template S
+     */
     function base$$curry(fn, opt_obj, opt_arity) {
       var len = (+opt_arity || fn.length)
-      function accumulator(args, opt_newArgs) {
-        if (!opt_newArgs) return function() { return accumulator(args, arguments) }
+      function curry$accumulator(args, newArgs) {
+        if (newArgs.length === 0) return function() { return curry$accumulator(args, arguments) }
         args = base$$_slice.call(args, 0)
-        args.push.apply(args, opt_newArgs)
+        args.push.apply(args, newArgs)
         return args.length >= len ?
           fn.apply(opt_obj, base$$_slice.call(args, 0, len)) :
-          function() { return accumulator(args, arguments) }
+          function() { return curry$accumulator(args, arguments) }
       }
-      return function cohesive$curry() { return accumulator([], arguments) }
+      return function $curry() { return curry$accumulator([], arguments) }
     }
 
-    function base$$partial(fn/*, var_args*/) {
+    /**
+     * @param {!function(?):?} fn
+     * @param {...*} var_args
+     * @return {!function(?):?}
+     */
+    function base$$partial(fn, var_args) {
       var args = base$$_slice.call(arguments, 1)
-      return function cohesive$partial() {
+      return function $partial() {
         var newArgs = base$$_slice.call(args, 0)
         newArgs.push.apply(newArgs, arguments)
         return fn.apply(this, newArgs)
       }
     }
 
-    function base$$bindPartial(fn, selfObj/*, var_args*/) {
+    /**
+     * @param {!function(this:T,?): ?} fn
+     * @param {!T} selfObj
+     * @param {...*} var_args
+     * @return {!function(?):?}
+     * @template T
+     */
+    function base$$bindPartial(fn, selfObj, var_args) {
       var args = base$$_slice.call(arguments, 2)
-      return function cohesive$bindPartial() {
+      return function $bindPartial() {
         var newArgs = base$$_slice.call(args, 0)
         newArgs.push.apply(newArgs, arguments)
         return fn.apply(selfObj, newArgs)
       }
     }
 
-    function base$$partialRight(fn/*, var_args*/) {
+    /**
+     * @param {!function(?):?} fn
+     * @param {...*} var_args
+     * @return {!function(?):?}
+     */
+    function base$$partialRight(fn, var_args) {
       var args = base$$_slice.call(arguments, 1)
-      return function cohesive$partialRight() {
+      return function $partialRight() {
         var newArgs = base$$_slice.call(arguments, 0)
         newArgs.push.apply(newArgs, args)
         return fn.apply(this, newArgs)
       }
     }
 
-    function base$$compose(/*fn1, fn2, var_args*/) {
+    /**
+     * @param {!function(?):*} fn1
+     * @param {!function(?):*} fn2
+     * @param {...function(?):*} var_args
+     * @return {!function(?):*}
+     */
+    function base$$compose(fn1, fn2, var_args) {
       var funcs = arguments
-      return function cohesive$compose() {
+      return function $compose() {
         var len = funcs.length, args = arguments
         while (len--) args = [funcs[len].apply(this, args)]
         return args
@@ -114,16 +174,126 @@
     /** @const */
     var base$$_waiting = {}
 
-    function base$$once(fn/*, var_args*/) {
+    /**
+     * @param {?function(...)} fn
+     * @param {...*} var_args
+     * @return {!Function}
+     */
+    function base$$once(fn, var_args) {
       var args = base$$_slice.call(arguments, 1), result = base$$_waiting
-      return function cohesive$once() {
+      return function $once() {
         if (result !== base$$_waiting) return result
         args.push.apply(args, arguments)
         result = fn.apply(this, args)
         fn = base$$once
         args = void 0
-        return result
+        return /** @type {Function}*/(result)
       }
+    }
+
+    /**
+     * @param {!Array|NodeList|Arguments|{length: number}} object
+     * @return {!Array}
+     */
+    function base$$toArray(object) {
+      var len = object.length >>> 0, rv = new Array(len), i
+      if (len > 0) {
+        for (i = 0; i < len; i++) rv[i] = object[i]
+      }
+      return rv
+    }
+
+    /**
+     * See {@link http://tinyurl.com/developer-mozilla-org-array-indexof}
+     * @param {!Array|NodeList|Arguments|{length: number}} value
+     * @param {*} search
+     * @param {number=} opt_fromIndex
+     * @return {number}
+     */
+    var base$$indexOf = Array.prototype.indexOf ?
+      function $$indexOf(value, search, opt_fromIndex) {
+        return Array.prototype.indexOf.call(value, search, opt_fromIndex)
+      } : function $$indexOf(value, search, opt_fromIndex) {
+        var length = value.length >>> 0, fromIndex = +opt_fromIndex || 0
+        if (fromIndex < 0) {
+          fromIndex += length
+          if (fromIndex < 0) fromIndex = 0
+        }
+        for (;fromIndex < length; fromIndex++) {
+          if (value[fromIndex] === search) return fromIndex
+        }
+        return -1
+      }
+
+
+    /**
+     * See {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach}
+     *
+     * @param {!function(T, number, ?): ?} fn
+     * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
+     * @template T
+     */
+    var base$$forEach = Array.prototype.forEach ?
+      function $forEach(fn, value) {
+        Array.prototype.forEach.call(value, fn)
+      } : function $$forEach(fn, value) {
+        var i = -1, len = value.length >>> 0
+        while (++i < len) {
+          if (i in value) fn(value[i], i, value)
+        }
+      }
+
+    /**
+     * @param {!function(this: S, T, number, ?): ?} fn
+     * @param {!S} selfObj
+     * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
+     * @template T,S
+     */
+    var base$$bindForEach = Array.prototype.forEach ?
+      function $bindForEach(fn, selfObj, value) {
+        Array.prototype.forEach.call(value, fn, selfObj)
+      } : function $bindForEach(fn, selfObj, value) {
+        var i = -1, len = value.length >>> 0
+        while (++i < len) {
+          if (i in value) fn.call(selfObj, value[i], i, value)
+        }
+      }
+
+    /**
+     * @param {!function(T, number, ?): ?} fn
+     * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
+     * @return {*}
+     * @template T
+     */
+    function base$$find(fn, value) {
+      var i = -1, len = value.length >>> 0, tag
+      while (++i < len) {
+        if (i in value) {
+          if (fn(tag = value[i], i, value)) return tag
+        }
+      }
+    }
+
+    /**
+     * @param {Object} target
+     * @param {...Object} var_args
+     * @return {Object}
+     */
+    function base$$extend(target, var_args) {
+      var key, source, i, j
+      for (i = 1; i < arguments.length; i++) {
+        source = arguments[i]
+        for (key in source) {
+          if (key in source) target[key] = source[key]
+        }
+        for (j = 0; j < base$$_OBJECT_PROTOTYPE_FIELDS.length; j++) {
+          key = base$$_OBJECT_PROTOTYPE_FIELDS[j]
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key]
+          }
+        }
+      }
+      return target
     }
 
     /**
@@ -135,9 +305,9 @@
      * @template T
      */
     var base$$filter = Array.prototype.filter ?
-      function cohesive$filter(fn, value) {
+      function $filter(fn, value) {
         return Array.prototype.filter.call(value, fn)
-      } : function cohesive$$filter(fn, value) {
+      } : function $$filter(fn, value) {
         var i = -1, resultLen = 0, result = [], len = value.length >>> 0, val
         while (++i < len) {
           if (i in value) {
@@ -158,9 +328,9 @@
      * @template T,S
      */
     var base$$bindFilter = Array.prototype.filter ?
-      function cohesive$bindFilter(fn, selfObj, value) {
+      function $bindFilter(fn, selfObj, value) {
         return Array.prototype.filter.call(value, fn, selfObj)
-      } : function cohesive$$bindFilter(fn, selfObj, value) {
+      } : function $bindFilter(fn, selfObj, value) {
         var i = -1, resultLen = 0, len = value.length >>> 0, result = [], val
         while (++i < len) {
           if (i in value) {
@@ -171,7 +341,6 @@
         return result
       }
 
-    // TODO add reduce
     /**
      * See {@link http://tinyurl.com/developer-mozilla-org-array-map}
      * @param {!function(T, number, ?):?} fn
@@ -180,9 +349,9 @@
      * @template T
      */
     var base$$map = Array.prototype.map ?
-      function cohesive$map(fn, value) {
+      function $map(fn, value) {
         return Array.prototype.map.call(value, fn)
-      } : function cohesive$$map(fn, value) {
+      } : function $map(fn, value) {
         var i = -1, len = value.length >>> 0, result = new Array(len)
         while (++i < len) result[i] = fn(value[i], i, value)
         return result
@@ -196,115 +365,47 @@
      * @template T,S
      */
     var base$$bindMap = Array.prototype.map ?
-      function cohesive$bindMap(fn, selfObj, value) {
+      function $bindMap(fn, selfObj, value) {
         return Array.prototype.map.call(value, fn, selfObj)
-      } : function cohesive$$bindMap(fn, selfObj, value) {
+      } : function $bindMap(fn, selfObj, value) {
         var i = -1, len = value.length >>> 0, result = new Array(len)
         while (++i < len) result[i] = fn.call(selfObj, value[i], i, value)
         return result
       }
 
-    /**
-     * See {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach}
-     *
-     * @param {!function(T, number, ?): ?} fn
-     * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
-     * @template T
-     */
-    var base$$forEach = Array.prototype.forEach ?
-      function cohesive$forEach(fn, value) {
-        Array.prototype.forEach.call(value, fn)
-      } : function cohesive$$forEach(fn, value) {
-        var i = -1, len = value.length >>> 0
-        while (++i < len) {
-          if (i in value) fn(value[i], i, value)
-        }
-      }
+    // TODO add reduce
 
     /**
-     * @param {!function(this: S, T, number, ?): ?} fn
-     * @param {!S} selfObj
-     * @param {!Array.<T>|NodeList|Arguments|{length: number}} value
-     * @template T,S
+     * @param {!number} time
+     * @param {boolean=} opt_ifDate
      */
-    var base$$bindForEach = Array.prototype.forEach ?
-      function cohesive$bindForEach(fn, selfObj, value) {
-        Array.prototype.forEach.call(value, fn, selfObj)
-      } : function cohesive$$bindForEach(fn, selfObj, value) {
-        var i = -1, len = value.length >>> 0
-        while (++i < len) {
-          if (i in value) fn.call(selfObj, value[i], i, value)
-        }
-      }
-    function base$$find(fn, value) {
-      var i = -1, len = value.length >>> 0, tag
-      while (++i < len) {
-        if (i in value) {
-          if (fn(tag = value[i], i, value)) return tag
-        }
-      }
-    }
-
-    function base$$toArray(object) {
-      var len = object.length >>> 0, rv = new Array(len), i
-      if (len > 0) {
-        for (i = 0; i < len; i++) rv[i] = object[i]
-      }
-      return rv
-    }
-
-    /**
-     * See {@link http://tinyurl.com/developer-mozilla-org-array-indexof}
-     * @param {!Array|NodeList|Arguments|{length: number}} value
-     * @param {*} search
-     * @param {number=} opt_fromIndex
-     * @return {number}
-     */
-    var base$$indexOf = Array.prototype.indexOf ?
-      function $indexOf(value, search, opt_fromIndex) {
-        return Array.prototype.indexOf.call(value, search, opt_fromIndex)
-      } : function $$indexOf(value, search, opt_fromIndex) {
-        var length = value.length >>> 0, fromIndex = +opt_fromIndex || 0
-        if (fromIndex < 0) {
-          fromIndex += length
-          if (fromIndex < 0) fromIndex = 0
-        }
-        for (;fromIndex < length; fromIndex++) {
-          if (value[fromIndex] === search) return fromIndex
-        }
-        return -1
-      }
-    function base$$extend(target/*, var_args*/) {
-      var key, source, i, j
-      for (i = 1; i < arguments.length; i++) {
-        source = arguments[i]
-        for (key in source)
-          if (key in source)
-            target[key] = source[key]
-        for (j = 0; j < base$$_OBJECT_PROTOTYPE_FIELDS.length; j++) {
-          key = base$$_OBJECT_PROTOTYPE_FIELDS[j]
-          if (Object.prototype.hasOwnProperty.call(source, key)) {
-            target[key] = source[key]
-          }
-        }
-      }
-      return target
-    }
-
     function base$$overrideStart(time, opt_ifDate) {
       if (!(opt_ifDate && base$$_perfStart)) base$$_start = time
     }
 
+    /**
+     * @return {!number}
+     */
     function base$$start() { return base$$_start }
 
     /**
      * @return {number} Current time in milliseconds since the epoch.
      */
-    var base$$now = Date.now || function cohesive$now() { return new Date().getTime() }
+    var base$$now = Date.now || function $now() { return new Date().getTime() }
+
+    /**
+     * @param {number=} opt_time
+     * @return {number}
+     */
     function base$$since(opt_time) {
       return base$$now() -(opt_time || base$$_start)
     }
 
+    /**
+     * @param {number=} opt_start
+     * @final
+     * @constructor
+     */
     function base$$Timer(opt_start) {
       this._start = opt_start || base$$Timer.now()
     }
@@ -354,6 +455,10 @@
       "'": '&#39;'
     }
 
+    /**
+     * @param {string} value
+     * @returns {string}
+     */
     function base$$escapeHTML(value) {
       return !value ? '' : String(value).replace(/[&<>"']/g, function escapeHTMLChar(match) {
         return base$$htmlEscapes[match]
@@ -369,6 +474,10 @@
       '&#39;':  "'"
     }
 
+    /**
+     * @param {string} value
+     * @returns {string}
+     */
     function base$$unescapeHTML(value) {
       return !value ? '' : String(value).replace(/(&amp;|&lt;|&gt;|&quot;|&#39;)/g, function unescapeHTMLChar(match) {
         return base$$htmlUnescapes[match]
@@ -410,31 +519,416 @@
         default: a[0].apply(void 0, asap$$_slice.call(a, 1))
         }
       }).observe(n,{characterData:true})
-      return function(/* fn, var_args */) {
+      return function(fn, var_args) {
         t.push(asap$$_slice.call(arguments, 0))
         if (t.length === 1) n.data = (++i % 2) ? '1' : ''
       }
-    }()) : asap$$_delay ? (function() {
-      return function(fn /*, var_args*/) {
+    }()) : (asap$$_delay ? (function() {
+      return function(fn, var_args) {
         var a = asap$$_slice.call(arguments, 1)
         asap$$_delay(function(){
           switch (a.length) {
           case 0: fn(); break;
           case 1: fn(a[0]); break;
-          default: fn.apply(void 0, asap$$_slice.call(a, 1))
+          default: fn.apply(void 0, a)
           }
           a = void 0
         })
       }
-    }()) : function(fn /*, var_args*/){
+    }()) : function(fn, var_args) {
       switch (arguments.length) {
-      case 0: fn(); break;
-      case 1: fn(arguments[0]); break;
+      case 1: fn(); break;
+      case 2: fn(arguments[1]); break;
       default: fn.apply(void 0, asap$$_slice.call(arguments, 1))
       }
-    };
+    });
 
     var asap$$default = asap$$asap;
+
+    /**
+     * @param {Element|Window} el
+     * @param {string} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     * @return {!function(!Event): (boolean|undefined)}
+     */
+    function event$$listen(el, type, fn) {
+      if (el.addEventListener) {
+        event$$applyListener(type, function(t) { el.addEventListener(t, fn, false) })
+      } else if (el.detachEvent) {
+        event$$applyListener(type, function(t) { el.attachEvent('on' + t, fn) })
+      } else {
+        throw new Error("Could not attach listener")
+      }
+      return fn
+    }
+
+    /**
+     * @param {string} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     * @return {!function(!Event): (boolean|undefined)}
+     */
+    function event$$listenOnce(el, type, fn) {
+      var detach;
+      if (el.addEventListener) {
+        event$$applyListener(type, function(t) {
+          detach = function(evt){ el.removeEventListener(t, detach, false); return fn(evt) }
+          el.addEventListener(t, detach, false)
+        })
+      } else if (el.detachEvent) {
+        event$$applyListener(type, function(t) {
+          detach = function(evt){ el.detachEvent('on' + t, fn); return fn(evt) }
+          el.attachEvent('on' + t, detach)
+        })
+      } else {
+        throw new Error("Could not attach listener")
+      }
+      return detach
+    }
+
+
+    /**
+     * @param {Element|Window} el
+     * @param {string|Array.<string>} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     */
+    function event$$unlisten(el, type, fn) {
+      if (el.addEventListener) {
+        event$$applyListener(type, function(t) { el.removeEventListener(t, fn, false) })
+      } else if (el.detachEvent) {
+        event$$applyListener(type, function(t) { el.detachEvent('on' + t, fn) })
+      } else {
+        throw new Error("Could not deattach listener")
+      }
+    }
+
+    /**
+     * @param {string|Array.<string>} type
+     * @param {!function(string)} fn
+     * @private
+     */
+    function event$$applyListener(type, fn) {
+      if (base$$isArray(type)) {
+        for (var i=0; i < type.length; i++) fn(type[i])
+      } else {
+        fn(/** @type {string}*/(type))
+      }
+    }
+
+    /**
+     * @param {string} type
+     * @param {Object=} opt_target
+     * @constructor
+     */
+    function event$$Event(type, opt_target) {
+      /** @type {string} */
+      this.type = String(type);
+
+      /** @type {EventTarget|Object|null} */
+      this.target = opt_target || null;
+
+      /** @type {Object|undefined} */
+      this.currentTarget = this.target;
+
+      /**
+       * @type {boolean}
+       * @protected
+       */
+      this._stopped = false;
+    }
+
+    /**
+     */
+    event$$Event.prototype.stopPropagation = function() {
+      this._stopped = true;
+    }
+
+
+    /**
+     * TODO Extract into mixin's
+     * @param {EventTarget=} opt_parent
+     * @param {Object=} opt_scope
+     * @constructor
+     */
+    function event$$EventTarget(opt_parent, opt_scope) {
+      /**
+       * @type {EventTarget|undefined}
+       * @private
+       */
+      this._parent = opt_parent;
+
+      /**
+       * @type {Object.<string, !Array.<!function(?):?|{handleEvent:function(?):?}>>}
+       * @private
+       */
+      this._listeners = {};
+
+      /**
+       * @type {Object}
+       */
+      this._scope = opt_scope || this;
+    }
+
+    /**
+     * @return {EventTarget|undefined}
+     */
+    event$$EventTarget.prototype.getParentEventTarget = function() {
+      return this._parent;
+    }
+
+    /**
+     * @param {EventTarget} parent
+     */
+    event$$EventTarget.prototype.setParentEventTarget = function(parent) {
+      this._parent = parent || null;
+    }
+
+    /**
+     *
+     */
+    event$$EventTarget.prototype.bindEventListeners = function(scope) {
+      this._scope = scope;
+    }
+
+    /**
+     * @param {string|Array.<string>} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     * @param {T=} opt_scope
+     * @return {EventTarget}
+     * @template T
+     */
+    event$$EventTarget.prototype.listen = function(type, fn, opt_scope) {
+      if (base$$isArray(type)) {
+        for (var i=0; i < type.length; i++) {
+          event$$addListener(this._listeners, type[i].toString(), false, fn, opt_scope)
+        }
+      } else {
+        event$$addListener(this._listeners, type.toString(), false, fn, opt_scope)
+      }
+      return this
+    }
+
+    /**
+     * @param {string|Array.<string>} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     * @param {T=} opt_scope
+     * @return {EventTarget}
+     * @template T
+     */
+    event$$EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
+      event$$addListener(this._listeners, type.toString(), true, fn, opt_scope)
+      return this
+    }
+
+    /**
+     * @param {string|Array.<string>} type
+     * @param {!function(!Event): (boolean|undefined)} fn
+     * @param {T=} opt_scope
+     * @return {EventTarget}
+     * @template T
+     */
+    event$$EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
+      if (base$$isArray(type)) {
+        for (var i=0; i < type.length; i++) {
+          event$$removeListener(this._listeners, type[i].toString(), false, fn, opt_scope)
+        }
+      } else {
+        event$$removeListener(this._listeners, type.toString(), false, fn, opt_scope)
+      }
+      return this
+    }
+
+    /**
+     * @param {string} type
+     * @param {!function(!Event): (boolean|undefined)} listener
+     */
+    event$$EventTarget.prototype.addEventListener = function(type, listener) {
+      this.listen(type, listener)
+    }
+
+    /**
+     * @param {string} type
+     * @param {!function(!Event): (boolean|undefined)} listener
+     */
+    event$$EventTarget.prototype.removeEventListener = function(type, listener) {
+      this.unlisten(type, listener)
+    }
+
+    /**
+     * @param {string|Object|Event} evt
+     * @return {boolean}
+     */
+    event$$EventTarget.prototype.dispatchEvent = function(evt) {
+      var ct = this, rv = true, type = evt.type || /** @type {string} */ (evt);
+      if (base$$isString(evt)) {
+        evt = new event$$Event(/** @type {string} */(evt), this);
+      } else if (!(evt instanceof event$$Event)) {
+        evt = /** @type {Event} */(base$$extend(new event$$Event(type, this), /** @type {Object}*/(evt)));
+      } else {
+        evt.target = evt.target || this;
+        evt.currentTarget = this;
+      }
+
+      rv = event$$fireListeners(type, evt) && rv;
+      for (; !evt._stopped && (ct = evt.currentTarget = ct.getParentEventTarget()); ) {
+        rv = event$$fireListeners(type, evt) && rv;
+      }
+      return rv
+    }
+
+    /**
+     * @param {string=} opt_type
+     * @return {number}
+     */
+    event$$EventTarget.prototype.removeAllListeners = function(opt_type) {
+      var i, t, tl, count = 0, type = opt_type && opt_type.toString();
+      for (t in this._listeners) {
+        if (!type || t === type) {
+          tl = this._listeners[t];
+          for (i = 0; i < tl.length; i++, count++) {
+            tl[i].dispose();
+          }
+          delete this._listeners[t];
+        }
+      }
+      return count;
+    }
+
+    /**
+     * TODO make sure closure compiler does not squash method name
+     * http://www.w3.org/TR/DOM-Level-2-Events/eventss.html#Events-EventListener
+     * @param {Event} evt
+     */
+    event$$EventTarget.prototype.handleEvent = function(evt) {
+      this.dispatchEvent(evt)
+    }
+
+    /**
+     *
+     */
+    event$$EventTarget.prototype.dispose = function() {
+      this.removeAllListeners();
+      this._parent = null;
+      this._scope = null;
+    }
+
+
+    /**
+     * @param {boolean} once
+     * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+     * @param {T=} opt_scope
+     * @template T
+     * @private
+     * @constructor
+     */
+    function event$$Listener(once, fn, opt_scope) {
+      /**
+       *
+       */
+      this._fn = fn;
+
+      /**
+       * @type {boolean}
+       */
+      this._once = !!once;
+
+      /**
+       *
+       */
+      this._scope = opt_scope;
+    }
+
+    /**
+     *
+     */
+    event$$Listener.prototype.dispose = function() {
+      this._fn = null;
+      this._once = false;
+      this._scope = null;
+    }
+
+    /**
+     * @param {Object.<string, !Array.<!Listener>>} listeners
+     * @param {string} type
+     * @param {boolean} once
+     * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+     * @param {T=} opt_scope
+     * @template T
+     * @private
+     */
+    function event$$addListener(listeners, type, once, fn, opt_scope) {
+      var l, tl = listeners[type];
+      if (!tl) {
+        listeners[type] = [new event$$Listener(once, fn, opt_scope)]
+        return fn
+      }
+      l = event$$lookupListener();
+      if (!l) {
+        tl.push(new event$$Listener(once, fn, opt_scope));
+      } else if (!once) {
+        l._once = false;
+      }
+      return fn
+    }
+
+    /**
+     * @param {Object.<string, !Array.<!Listener>>} listeners
+     * @param {string} type
+     * @param {boolean} once
+     * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+     * @param {T=} opt_scope
+     * @template T
+     * @private
+     */
+    function event$$removeListener(listeners, type, once, fn, opt_scope) {
+      var i, l, tl = listeners[type];
+      if (!tl) return false
+      for (i = 0; i < tl.length; ++i) {
+        l = tl[i];
+        if (l._fn === fn && l._scope === opt_scope) {
+          l.dispose()
+          tl.splice(i, 1)
+          if (tl.length === 0) {
+            delete listeners[type]
+          }
+          return true
+        }
+      }
+      return false
+    }
+
+    /**
+     * @param {!Array.<!Listener>} listeners
+     * @param {!function(this:T,?):?|{handleEvent: function (?): ?}} fn
+     * @param {T=} opt_scope
+     * @private
+     * @template T
+     */
+    function event$$lookupListener(listeners, fn, opt_scope) {
+      for (var i = 0; i < listeners.length; ++i) {
+        var l = listeners[i];
+        if (l._fn === fn && l._scope === opt_scope) {
+          return l;
+        }
+      }
+    }
+
+    /**
+     * @param {string} type
+     * @param {Event} evt
+     * @private
+     */
+    function event$$fireListeners(type, evt) {
+      var l, i=0, rv = true, src = evt.currentTarget, tl = src._listeners[type.toString()];
+      if (!tl) return true
+      tl = Array.prototype.slice.call(tl, 0);
+      for (l = tl[i]; i < tl.length; l = tl[++i]) {
+        if (l._fn) {
+          if (l._once) event$$removeListener(src._listeners, type, true, l._fn, l._scope)
+          rv = l._fn.call(l._scope || src._scope, evt) !== false && rv;
+        }
+      }
+      return rv;
+    }
 
     var dom$$_hasClassList = !!window['domTokenList'];
 
@@ -460,6 +954,11 @@
       } : function(el, value) {
         return ~base$$indexOf(dom$$listClasses(el), value)
       }
+
+    /**
+     * @param {Element} el
+     * @param {string} value
+     */
     function dom$$setClass(el, value) {
       el.className = value
     }
@@ -548,6 +1047,11 @@
         dom$$removeClass(el, value)
       }
     }
+
+    /**
+     * @param {Element} el
+     * @param {Object} properties
+     */
     function dom$$setProperties(el, properties) {
       for (var key in properties) {
         if (key in properties) {
@@ -587,6 +1091,10 @@
       'width': 'width'
     }
 
+    /**
+     * @param {Node} node
+     * @param {string|number} text
+     */
     function dom$$setText(node, text) {
       if ('textContent' in node) {
         node.textContent = text;
@@ -607,6 +1115,11 @@
       return node
     }
 
+    /**
+     * @param {Element} el
+     * @param {string} key
+     * @param {string} value
+     */
     function dom$$setData(el, key, value) {
       if (el.dataset) {
         el.dataset[key] = value;
@@ -615,6 +1128,11 @@
       }
     }
 
+    /**
+     * @param {Element} el
+     * @param {string} key
+     * @return {?string}
+     */
     function dom$$getData(el, key) {
       if (el.dataset) {
         return el.dataset[key];
@@ -623,6 +1141,10 @@
       }
     }
 
+    /**
+     * @param {Element} el
+     * @param {string} key
+     */
     function dom$$removeData(el, key) {
       if (el.dataset) {
         delete el.dataset[key];
@@ -631,6 +1153,11 @@
       }
     }
 
+    /**
+     * @param {Element} el
+     * @param {string} key
+     * @return {boolean}
+     */
     function dom$$hasData(el, key) {
       if (el.dataset) {
         return key in el.dataset;
@@ -641,6 +1168,10 @@
       }
     }
 
+    /**
+     * @param {!Element} el
+     * @return {!Object}
+     */
     function dom$$getAllData(el) {
       if (el.dataset) {
         return el.dataset;
@@ -660,6 +1191,12 @@
       return match.toUpperCase();
     }
 
+    /**
+     * TODO: Needs work
+     * @param {string} className
+     * @param {Document|Element=} opt_parent
+     * @return {{length: number}}
+     */
     function dom$$queryByClass(className, opt_parent) {
       var parent = opt_parent || document, results, el, name, sNames, len, l, i, c, elements
       if (parent.getElementsByClassName) return parent.getElementsByClassName(className)
@@ -687,6 +1224,8 @@
       return results
     }
 
+    /**
+     */
     function dom$$queryParentsByClass(el, className) {
       while(el) {
         if( dom$$containsClass(el, className) ) return el
@@ -694,6 +1233,10 @@
       }
     }
 
+    /**
+     * @param {Document|Element} el
+     * @return {boolean}
+     */
     function dom$$focus(el) {
       var f = el && !el.disabled && el.style.display !== 'none' && el.style.visibility !== 'hidden'
       if (f) el.focus()
@@ -748,365 +1291,73 @@
       }
       if (dom$$_rafCallbacks.length===1) clearTimeout(dom$$_rafCallbacks.pop());
     }
-    function dom$$listener(cb, selfObj, handlerBaseName, el) {
-      if (!el) el = (selfObj || window);
-      var fn = function dom$listener(e){ return cb.call(selfObj || window, e || window['event']) }
+
+    /**
+     * @param {Element} el
+     * @param {string} type
+     * @param {?function(this:T, ...)} cb
+     * @param {T=} opt_selfObj
+     * @return {!Function}
+     * @template T
+     */
+    function dom$$listener(el, type, cb, opt_selfObj) {
+      var fn = function dom$listener(e){ return cb.call(opt_selfObj || window, e || window['event']) }
       if (el.addEventListener) {
-        el.addEventListener(handlerBaseName, fn, false)
+        el.addEventListener(type, fn, false)
       } else if (el.detachEvent) {
-        el.attachEvent('on' + handlerBaseName, fn)
+        el.attachEvent('on' + type, fn)
       }
       fn.destroy = function() {
         if (el.addEventListener) {
-          el.removeEventListener(handlerBaseName, fn, false)
+          el.removeEventListener(type, fn, false)
         } else if (el.detachEvent) {
-          el.detachEvent('on' + handlerBaseName, fn)
+          el.detachEvent('on' + type, fn)
         }
       }
       return fn
     }
 
-    function dom$$throttledListener(cb, selfObj, handlerBaseName, el) {
-      if (!el) el = (selfObj || window);
+    /**
+     * @param {Element} el
+     * @param {!string} type
+     * @param {?function(this:T, ...)} cb
+     * @param {T=} opt_selfObj
+     * @return {!Function}
+     * @template T
+     */
+    function dom$$throttledListener(el, type, cb, opt_selfObj) {
       var evt, id, fn = function dom$throttledListener(e) {
         evt = e || window['event'];
         if(!id) {
           id = dom$$requestAnimationFrame(function(t){
             var e = evt; evt = id = void 0
-            cb.call(selfObj, t, e)
+            cb.call(opt_selfObj, t, e)
           })
         }
       }
       if (el.addEventListener) {
-        el.addEventListener(handlerBaseName, fn, false)
+        el.addEventListener(type, fn, false)
       } else if (el.detachEvent) {
-        el.attachEvent('on' + handlerBaseName, fn)
+        el.attachEvent('on' + type, fn)
       }
       fn.destroy = function(){
         if(id) dom$$cancelAnimationFrame(id)
         if (el.addEventListener) {
-          el.removeEventListener(handlerBaseName, fn, false)
+          el.removeEventListener(type, fn, false)
         } else if (el.detachEvent) {
-          el.detachEvent('on' + handlerBaseName, fn)
+          el.detachEvent('on' + type, fn)
         }
       }
       return fn
-    }
-    function event$$listen(el, type, fn) {
-      if (el.addEventListener) {
-        event$$applyListener(type, function(t) { el.addEventListener(t, fn, false) })
-      } else if (el.detachEvent) {
-        event$$applyListener(type, function(t) { el.attachEvent('on' + t, fn) })
-      } else {
-        throw Error("Could not attach listener")
-      }
-      return fn
-    }
-
-    function event$$listenOnce(el, type, fn) {
-      var detach;
-      if (el.addEventListener) {
-        event$$applyListener(type, function(t) {
-          detach = function(evt){ el.removeEventListener(t, detach, false); return fn(evt) }
-          el.addEventListener(t, detach, false)
-        })
-      } else if (el.detachEvent) {
-        event$$applyListener(type, function(t) {
-          detach = function(evt){ el.detachEvent('on' + t, fn); return fn(evt) }
-          el.attachEvent('on' + t, detach)
-        })
-      } else {
-        throw Error("Could not attach listener")
-      }
-      return detach
-    }
-
-
-    function event$$unlisten(el, type, fn) {
-      if (el.addEventListener) {
-        event$$applyListener(type, function(t) { el.removeEventListener(t, fn, false) })
-      } else if (el.detachEvent) {
-        event$$applyListener(type, function(t) { el.detachEvent('on' + t, fn) })
-      } else {
-        throw Error("Could not deattach listener")
-      }
-    }
-
-    /**
-     * @private
-     */
-    function event$$applyListener(type, fn) {
-      if (base$$isArray(type)) {
-        for (var i=0; i < type.length; i++) fn(type[i])
-      } else {
-        fn(type)
-      }
-    }
-
-    function event$$Event(type, opt_target) {
-      /** @type {string} */
-      this.type = String(type);
-
-      /** @type {EventTarget|Object|null} */
-      this.target = opt_target || null;
-
-      /** @type {Object|undefined} */
-      this.currentTarget = this.target;
-
-      /**
-       * @type {boolean}
-       * @protected
-       */
-      this._stopped = false;
-    }
-
-    /**
-     */
-    event$$Event.prototype.stopPropagation = function() {
-      this._stopped = true;
-    }
-
-
-    function event$$EventTarget(opt_parent, opt_scope) {
-      /**
-       * @type {EventTarget|undefined}
-       * @private
-       */
-      this._parent = opt_parent;
-
-      /**
-       * @type {Object.<string, !Array.<!function(?):?|{handleEvent:function(?):?}>>}
-       * @private
-       */
-      this._listeners = {};
-
-      /**
-       * TODO not sure this is good?
-       */
-      this._scope = opt_scope || this;
-    }
-
-    /**
-     * @return {EventTarget|undefined}
-     */
-    event$$EventTarget.prototype.getParentEventTarget = function() {
-      return this._parent;
-    }
-
-    /**
-     * @param {EventTarget} parent
-     */
-    event$$EventTarget.prototype.setParentEventTarget = function(parent) {
-      this._parent = parent || null;
-    }
-
-    /**
-     *
-     */
-    event$$EventTarget.prototype.bindEventListeners = function(scope) {
-      this._scope = scope;
-    }
-
-    /**
-     * @param {!function(?):?} fn
-     * @param {string|Array.<string>} type
-     */
-    event$$EventTarget.prototype.listen = function(type, fn, opt_scope) {
-      if (base$$isArray(type)) {
-        for (var i=0; i < type.length; i++) {
-          event$$addListener(this._listeners, type[i].toString(), false, fn, opt_scope)
-        }
-      } else {
-        event$$addListener(this._listeners, type.toString(), false, fn, opt_scope)
-      }
-      return this
-    }
-
-    /**
-     * @param {!function(?):?} fn
-     * @param {string} type
-     */
-    event$$EventTarget.prototype.listenOnce = function(type, fn, opt_scope) {
-      event$$addListener(this._listeners, type.toString(), true, fn, opt_scope)
-      return this
-    }
-
-    /**
-     * @param {!function(?):?} fn
-     * @param {string|Array.<string>} type
-     */
-    event$$EventTarget.prototype.unlisten = function(type, fn, opt_scope) {
-      if (base$$isArray(type)) {
-        for (var i=0; i < type.length; i++) {
-          event$$removeListener(this._listeners, type[i].toString(), false, fn, opt_scope)
-        }
-      } else {
-        event$$removeListener(this._listeners, type.toString(), false, fn, opt_scope)
-      }
-      return this
-    }
-
-    /**
-     * @param {string} type
-     * @param {function(?):?|{handleEvent:function(?):?}} listener
-     */
-    event$$EventTarget.prototype.addEventListener = function(type, listener) {
-      this.listen(type, listener)
-    }
-
-    /**
-     * @param {string} type
-     * @param {function(?):?|{handleEvent:function(?):?}} listener
-     */
-    event$$EventTarget.prototype.removeEventListener = function(type, listener) {
-      this.unlisten(type, listener)
-    }
-
-    /**
-     * @param {string|Object|Event} evt
-     * @return {boolean}
-     */
-    event$$EventTarget.prototype.dispatchEvent = function(evt) {
-      var ct = this, rv = true, type = evt.type || /** @type {string} */ (evt);
-      if (base$$isString(evt)) {
-        evt = new event$$Event(evt, this);
-      } else if (!(evt instanceof event$$Event)) {
-        evt = base$$extend(new event$$Event(type, this), evt);
-      } else {
-        evt.target = evt.target || this;
-        evt.currentTarget = this;
-      }
-
-      rv = event$$fireListeners(type, evt) && rv;
-      for (; !evt._stopped && (ct = evt.currentTarget = ct.getParentEventTarget()); ) {
-        rv = event$$fireListeners(type, evt) && rv;
-      }
-      return rv
-    }
-
-    /**
-     * @param {string} opt_type
-     * @return {number}
-     */
-    event$$EventTarget.prototype.removeAllListeners = function(opt_type) {
-      var i, t, tl, count = 0, type = opt_type && opt_type.toString();
-      for (t in this._listeners) {
-        if (!type || t === type) {
-          tl = this._listeners[t];
-          for (i = 0; i < tl.length; i++, count++) {
-            tl[i].dispose();
-          }
-          delete this._listeners[t];
-        }
-      }
-      return count;
-    }
-
-    /**
-     * TODO make sure closure compiler does not squash method name
-     * http://www.w3.org/TR/DOM-Level-2-Events/eventss.html#Events-EventListener
-     */
-    event$$EventTarget.prototype.handleEvent = function(evt) {
-      this.dispatchEvent(evt)
-    }
-
-    /**
-     *
-     */
-    event$$EventTarget.prototype.dispose = function() {
-      this.removeAllListeners();
-      this._parent = null;
-      this._scope = null;
-    }
-
-
-    /**
-     * @private
-     * @constructor
-     */
-    function event$$Listener(once, fn, opt_scope) {
-      this._fn = fn;
-      this._once = !!once;
-      this._scope = opt_scope;
-    }
-
-    /**
-     *
-     */
-    event$$Listener.prototype.dispose = function() {
-      this._fn = null;
-      this._once = false;
-      this._scope = null;
-    }
-
-    /**
-     * @private
-     */
-    function event$$addListener(listeners, type, once, fn, opt_scope) {
-      var l, tl = listeners[type];
-      if (!tl) {
-        listeners[type] = [new event$$Listener(once, fn, opt_scope)]
-        return fn
-      }
-      l = event$$lookupListener();
-      if (!l) {
-        tl.push(new event$$Listener(once, fn, opt_scope));
-      } else if (!once) {
-        l._once = false;
-      }
-      return fn
-    }
-
-    /**
-     * @private
-     */
-    function event$$removeListener(listeners, type, once, fn, opt_scope) {
-      var i, l, tl = listeners[type];
-      if (!tl) return false
-      for (i = 0; i < tl.length; ++i) {
-        l = tl[i];
-        if (l._fn === fn && l._scope === opt_scope) {
-          l.dispose()
-          tl.splice(i, 1)
-          if (tl.length === 0) {
-            delete listeners[type]
-          }
-          return true
-        }
-      }
-      return false
-    }
-
-    /**
-     * @private
-     */
-    function event$$lookupListener(listeners, fn, opt_scope) {
-      for (var i = 0; i < listeners.length; ++i) {
-        var l = listeners[i];
-        if (l._fn === fn && l._scope === opt_scope) {
-          return l;
-        }
-      }
-    }
-
-    /**
-     * @private
-     */
-    function event$$fireListeners(type, evt) {
-      var l, i=0, rv = true, src = evt.currentTarget, tl = src._listeners[type.toString()];
-      if (!tl) return true
-      tl = Array.prototype.slice.call(tl, 0);
-      for (l = tl[i]; i < tl.length; l = tl[++i]) {
-        if (l._fn) {
-          if (l._once) event$$removeListener(src._listeners, type, true, l._fn, l._scope)
-          rv = l._fn.call(l._scope || src._scope, evt) !== false && rv;
-        }
-      }
-      return rv;
     }
 
     var analytics$$GA_ENDPOINT = '//www.google-analytics.com/collect?v=1';
 
+    /**
+     * @param {string} trackingID
+     * @param {string=} opt_uid
+     * @constructor
+     */
     function analytics$$GA(trackingID, opt_uid) {
       this._tid = trackingID
       this._next = ''
@@ -1211,7 +1462,7 @@
     /**
      * @param {function()} fn
      */
-    var ready$$ready = (function() {
+    var $$ready$$ready = (function() {
       var isReady = false, handlers, cb;
       function flushHandlers() {
         var h;
@@ -1264,9 +1515,9 @@
         }
       }
     })();
-    var ready$$default = ready$$ready;
+    var $$ready$$default = $$ready$$ready;
 
-    var index$$cohesive = {
+    var browser$$cohesive = {
       isUndefined:base$$isUndefined,
       isString:base$$isString,
       isNumber:base$$isNumber,
@@ -1305,74 +1556,52 @@
       unescapeHTML:base$$unescapeHTML
     }
 
-    index$$cohesive.asap = asap$$default;
+    browser$$cohesive.asap = asap$$default;
 
-    index$$cohesive.event = {
+    browser$$cohesive.event = {
       listen: event$$listen,
       unlisten: event$$unlisten,
       listenOnce: event$$listenOnce,
       Event: event$$Event,
-      EventTarget: event$$EventTarget
+      EventTarget: event$$EventTarget,
+      Listener: event$$Listener
     }
 
-    if (typeof window !== 'undefined') {
-      // import {
-      //   containsClass,
-      //   setClass,
-      //   addClasses,
-      //   removeClasses,
-      //   toggleClass,
-      //   enableClass,
-      //   setProperties,
-      //   setText,
-      //   setData,
-      //   getData,
-      //   getAllData,
-      //   hasData,
-      //   removeData,
-      //   queryByClass,
-      //   queryParentsByClass,
-      //   focus,
-      //   requestAnimationFrame,
-      //   cancelAnimationFrame,
-      //   listener,
-      //   throttledListener
-      // } from "./dom";
-      // cohesive.dom = {
-      //   containsClass:containsClass,
-      //   setClass:setClass,
-      //   addClasses:addClasses,
-      //   removeClasses:removeClasses,
-      //   toggleClass:toggleClass,
-      //   enableClass:enableClass,
-      //   setProperties:setProperties,
-      //   setText:setText,
-      //   setData:setData,
-      //   getData:getData,
-      //   getAllData:getAllData,
-      //   hasData:hasData,
-      //   removeData:removeData,
-      //   queryByClass:queryByClass,
-      //   queryParentsByClass:queryParentsByClass,
-      //   focus:focus,
-      //   requestAnimationFrame:requestAnimationFrame,
-      //   cancelAnimationFrame:cancelAnimationFrame,
-      //   listener:listener,
-      //   throttledListener:throttledListener
-      // }
-
-      // import ready from "./ready";
-      // cohesive.ready = ready;
+    browser$$cohesive.dom = {
+      listClasses:dom$$listClasses,
+      containsClass:dom$$containsClass,
+      setClass:dom$$setClass,
+      addClasses:dom$$addClasses,
+      removeClasses:dom$$removeClasses,
+      toggleClass:dom$$toggleClass,
+      enableClass:dom$$enableClass,
+      setProperties:dom$$setProperties,
+      setText:dom$$setText,
+      setData:dom$$setData,
+      getData:dom$$getData,
+      getAllData:dom$$getAllData,
+      hasData:dom$$hasData,
+      removeData:dom$$removeData,
+      queryByClass:dom$$queryByClass,
+      queryParentsByClass:dom$$queryParentsByClass,
+      focus:dom$$focus,
+      requestAnimationFrame:dom$$requestAnimationFrame,
+      cancelAnimationFrame:dom$$cancelAnimationFrame,
+      listener:dom$$listener,
+      throttledListener:dom$$throttledListener
     }
 
-    var index$$default = index$$cohesive;
+    browser$$cohesive.ready = $$ready$$default;
+
+    var browser$$default = browser$$cohesive;
 
     if (typeof define === 'function' && define.amd) {
-      define(function() { return index$$cohesive; });
+      define(function() { return browser$$cohesive; })
     } else if (typeof module !== 'undefined' && module.exports) {
-      module.exports = index$$cohesive;
-    } else if (typeof this !== 'undefined') {
-      this['cohesive'] = index$$cohesive;
+      module.exports = browser$$cohesive
+    } else if (this !== void 0) {
+      this['cohesive'] = browser$$cohesive
     }
 }).call(this);
 
+//# sourceMappingURL=cohesive.js.map
