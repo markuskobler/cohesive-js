@@ -1,10 +1,9 @@
 /* global cohesive */
 describe('cohesive.event', function() {
+  var EventTarget = cohesive.event.EventTarget,
+      Event       = cohesive.event.Event
 
   describe('EventTarget', function() {
-    var EventTarget = cohesive.event.EventTarget,
-        Event       = cohesive.event.Event
-
     it('should listen to simple event', function() {
       var target = new EventTarget(), count = 0
 
@@ -43,7 +42,7 @@ describe('cohesive.event', function() {
       assert.equal(count, 2)
     })
 
-    it('should listen to object event', function() {
+    it('should listen to {type:string} or Events', function() {
       var target = new EventTarget(), count = 0, dummy = {}
 
       var f = function(e) {
@@ -61,6 +60,60 @@ describe('cohesive.event', function() {
       target.removeAllListeners('test')
       target.dispatchEvent('test')
       assert.equal(count, 2)
+    })
+
+    it('should listen once to events', function() {
+      var target = new EventTarget(), count = 0, dummy = {}
+
+      var f = function(e) {
+        count++
+        assert.equal(e.type, 'test')
+      }
+      target.listenOnce('test', f)
+
+      assert.equal(count, 0)
+      target.dispatchEvent('test')
+      assert.equal(count, 1)
+      target.dispatchEvent('test')
+      assert.equal(count, 1)
+    })
+  })
+
+
+
+  describe('#listen', function() {
+    it('should attach to addEventListener', function() {
+      var target = new EventTarget(), count = 0, dummy = {}
+      var f = function(e) {
+        count++
+        assert.equal(e.type, 'test')
+      }
+      cohesive.event.listen(target, 'test', f)
+
+      assert.equal(count, 0)
+      target.dispatchEvent('test')
+      target.dispatchEvent('test')
+      assert.equal(count, 2)
+      cohesive.event.unlisten(target, 'test', f)
+      target.dispatchEvent('test')
+      assert.equal(count, 2)
+    })
+  })
+
+  describe('#listenOnce', function() {
+    it('should attach to addEventListener', function() {
+      var target = new EventTarget(), count = 0, dummy = {}
+      var f = function(e) {
+        count++
+        assert.equal(e.type, 'test')
+      }
+      cohesive.event.listenOnce(target, 'test', f)
+
+      assert.equal(count, 0)
+      target.dispatchEvent('test')
+      assert.equal(count, 1)
+      target.dispatchEvent('test')
+      assert.equal(count, 1)
     })
   })
 })

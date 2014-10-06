@@ -1,17 +1,11 @@
-/**
- * cohesive.js | Copyright 2014 Markus Kobler | 3-clause BSD license
- *
- * TODO work and progress
- *
- * @fileoverview Promise
- */
-import {isFunction, noop, bind, bindPartial} from "./base";
-import asap from "./asap";
+"use strict";
+;
+var base$$ = require("./base"), asap$$ = require("./asap");
 
-var PENDING   = void 0
-var SEALED    = 0
-var FULFILLED = 1
-var REJECTED  = 2
+var PENDING   = void 0;
+var SEALED    = 0;
+var FULFILLED = 1;
+var REJECTED  = 2;
 
 /**
  * @see http://dom.spec.whatwg.org/#futures
@@ -52,9 +46,9 @@ function invokeResolver(resolver, promise) {
  * @template RESULT
  */
 Promise.prototype.then = function(opt_success, opt_errback, opt_progress) {
-  var child = new Promise(noop), parent = this, callbacks = arguments
+  var child = new Promise(base$$.noop), parent = this, callbacks = arguments
   if (this._state) {
-    asap(function invokePromiseCallback() {
+    asap$$.default(function invokePromiseCallback() {
       var state = parent._state - 1
       invokeCallback(parent._state, child, callbacks[state], parent._detail)
     })
@@ -75,8 +69,8 @@ Promise.prototype.fulfilled = function(success, opt_scope, var_args) {
   switch (arguments.length) {
   case 0:
   case 1: return this.then(success, void 0, void 0)
-  case 2: return this.then(bind(success, opt_scope), void 0, void 0)
-  default: return this.then(bindPartial.apply(null, arguments), void 0, void 0)
+  case 2: return this.then(base$$.bind(success, opt_scope), void 0, void 0)
+  default: return this.then(base$$.bindPartial.apply(null, arguments), void 0, void 0)
   }
 }
 
@@ -92,8 +86,8 @@ Promise.prototype['catch'] = function(errback, opt_scope, var_args) {
   switch (arguments.length) {
   case 0:
   case 1: return this.then(void 0, errback, void 0)
-  case 2: return this.then(void 0, bind(errback, opt_scope), void 0)
-  default: return this.then(void 0, bindPartial.apply(null, arguments), void 0)
+  case 2: return this.then(void 0, base$$.bind(errback, opt_scope), void 0)
+  default: return this.then(void 0, base$$.bindPartial.apply(null, arguments), void 0)
   }
 }
 
@@ -109,8 +103,8 @@ Promise.prototype.progressed = function(callback, opt_scope, var_args) {
   switch (arguments.length) {
   case 0:
   case 1: return this.then(void 0, void 0, callback)
-  case 2: return this.then(void 0, void 0, bind(callback, opt_scope))
-  default: return this.then(void 0, void 0, bindPartial.apply(null, arguments))
+  case 2: return this.then(void 0, void 0, base$$.bind(callback, opt_scope))
+  default: return this.then(void 0, void 0, base$$.bindPartial.apply(null, arguments))
   }
 }
 
@@ -129,8 +123,8 @@ Promise.prototype['finally'] = function(callback, opt_scope, var_args) {
   var fn
   switch (arguments.length) {
   case 1:  fn = callback; break
-  case 2:  fn = bind(callback, opt_scope); break
-  default: fn = bindPartial.apply(null, arguments)
+  case 2:  fn = base$$.bind(callback, opt_scope); break
+  default: fn = base$$.bindPartial.apply(null, arguments)
   }
   function successWrapper(v) {
     fn(v);
@@ -189,7 +183,7 @@ function publish(promise, settled) {
 }
 
 function invokeCallback(settled, promise, callback, detail) {
-  var value, error, succeeded, failed, hasCallback = isFunction(callback)
+  var value, error, succeeded, failed, hasCallback = base$$.isFunction(callback)
 
   if (hasCallback) {
     try {
@@ -219,14 +213,14 @@ function resolve(promise, value) {
   if (promise._state !== PENDING) return;
   promise._state = SEALED;
   promise._detail = value;
-  asap(publishFulfillment, promise);
+  asap$$.default(publishFulfillment, promise);
 }
 
 function reject(promise, reason) {
   if (promise._state !== PENDING) return;
   promise._state = SEALED;
   promise._detail = reason;
-  asap(publishRejection, promise);
+  asap$$.default(publishRejection, promise);
 }
 
 function publishFulfillment(promise) {
@@ -237,4 +231,7 @@ function publishRejection(promise) {
   publish(promise, promise._state = REJECTED);
 }
 
-export default Promise;
+exports["default"] = Promise;
+;
+
+//# sourceMappingURL=promise.js.map

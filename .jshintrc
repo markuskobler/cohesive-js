@@ -1,5 +1,7 @@
 {
     "predef":[
+        "-Promise",
+
         "window",
         "document",
         "navigator",
@@ -7,6 +9,8 @@
         "clearTimeout",
         "setImmediate",
         "Image",
+        "XMLHttpRequest",
+        "ActiveXObject",
         "process",
         "define",
         "module",

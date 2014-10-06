@@ -923,12 +923,243 @@
       tl = Array.prototype.slice.call(tl, 0);
       for (l = tl[i]; i < tl.length; l = tl[++i]) {
         if (l._fn) {
-          if (l._once) event$$removeListener(src._listeners, type, true, l._fn, l._scope)
           rv = l._fn.call(l._scope || src._scope, evt) !== false && rv;
+          if (l._once) event$$removeListener(src._listeners, type, true, l._fn, l._scope)
         }
       }
       return rv;
     }
+
+    var promise$$PENDING   = void 0;
+    var promise$$SEALED    = 0;
+    var promise$$FULFILLED = 1;
+    var promise$$REJECTED  = 2;
+
+    /**
+     * @see http://dom.spec.whatwg.org/#futures
+     * @param {function(function((TYPE|IThenable.<TYPE>|Thenable)),function(*))} resolver
+     * @constructor
+     * @implements {IThenable.<TYPE>}
+     * @template TYPE
+     */
+    var promise$$Promise = function(resolver) {
+      /** @type {number|undefined} */
+      this._state       = promise$$PENDING
+      this._subscribers = void 0
+      this._detail      = void 0
+      promise$$invokeResolver(resolver, this)
+    };
+
+    function promise$$invokeResolver(resolver, promise) {
+      function resolvePromise(value) {
+        promise$$resolve(promise, value)
+      }
+
+      function rejectPromise(reason) {
+        promise$$reject(promise, reason)
+      }
+
+      try {
+        resolver(resolvePromise, rejectPromise)
+      } catch(e) {
+        rejectPromise(e)
+      }
+    }
+
+    /**
+     * @param {(function(TYPE):(RESULT|IThenable.<RESULT>|Thenable))=} opt_success
+     * @param {(function(*): *)=} opt_errback
+     * @param {(function(*): *)=} opt_progress
+     * @return {IThenable.<RESULT>}
+     * @template RESULT
+     */
+    promise$$Promise.prototype.then = function(opt_success, opt_errback, opt_progress) {
+      var child = new promise$$Promise(base$$noop), parent = this, callbacks = arguments
+      if (this._state) {
+        asap$$default(function invokePromiseCallback() {
+          var state = parent._state - 1
+          promise$$invokeCallback(parent._state, child, callbacks[state], parent._detail)
+        })
+      } else {
+        promise$$subscribe(this, child, opt_success, opt_errback)
+      }
+      return child
+    }
+
+    /**
+     * @param {!function(*):?} success
+     * @param {*=} opt_scope
+     * @param {...*} var_args
+     * @return {IThenable.<RESULT>}
+     * @template RESULT
+     */
+    promise$$Promise.prototype.fulfilled = function(success, opt_scope, var_args) {
+      switch (arguments.length) {
+      case 0:
+      case 1: return this.then(success, void 0, void 0)
+      case 2: return this.then(base$$bind(success, opt_scope), void 0, void 0)
+      default: return this.then(base$$bindPartial.apply(null, arguments), void 0, void 0)
+      }
+    }
+
+    /**
+     * @param {!function(*):?} errback
+     * @param {*=} opt_scope
+     * @param {...*} var_args
+     * @return {IThenable.<RESULT>}
+     * @template RESULT
+     */
+    promise$$Promise.prototype.caught =
+    promise$$Promise.prototype['catch'] = function(errback, opt_scope, var_args) {
+      switch (arguments.length) {
+      case 0:
+      case 1: return this.then(void 0, errback, void 0)
+      case 2: return this.then(void 0, base$$bind(errback, opt_scope), void 0)
+      default: return this.then(void 0, base$$bindPartial.apply(null, arguments), void 0)
+      }
+    }
+
+    /**
+     * TODO look carefully at what happens in event of error? (maybe abort?)
+     * @param {!function(*)} callback
+     * @param {*=} opt_scope
+     * @param {...*} var_args
+     * @return {IThenable.<RESULT>}
+     * @template RESULT
+     */
+    promise$$Promise.prototype.progressed = function(callback, opt_scope, var_args) {
+      switch (arguments.length) {
+      case 0:
+      case 1: return this.then(void 0, void 0, callback)
+      case 2: return this.then(void 0, void 0, base$$bind(callback, opt_scope))
+      default: return this.then(void 0, void 0, base$$bindPartial.apply(null, arguments))
+      }
+    }
+
+    /**
+     * todo check if thenable is similar enough to standard implementations?
+     * TODO implement similar tap method?
+     * @param {!function(*)} callback
+     * @param {*=} opt_scope
+     * @param {...*} var_args
+     * @return {IThenable.<RESULT>}
+     * @template RESULT
+     */
+    promise$$Promise.prototype.lastly =
+    promise$$Promise.prototype['finally'] = function(callback, opt_scope, var_args) {
+      if (!callback) return this.then(void 0, void 0, void 0)
+      var fn
+      switch (arguments.length) {
+      case 1:  fn = callback; break
+      case 2:  fn = base$$bind(callback, opt_scope); break
+      default: fn = base$$bindPartial.apply(null, arguments)
+      }
+      function successWrapper(v) {
+        fn(v);
+        return v;
+      }
+      function errbackWrapper(v) {
+        fn(v);
+        throw v;
+      }
+      return this.then(successWrapper, errbackWrapper, void 0);
+    }
+
+    promise$$Promise.prototype.abort = function() {
+      if (this._state !== promise$$PENDING) return;
+      // reject(this, new xhr.AbortError("", "", this._xhr)); // todo move up
+      // if (this._xhr ) {
+      //     this._xhr.abort();
+      //     this._xhr.onreadystatechange = noop;
+      // }
+    }
+
+
+    /**
+     * @param {(TYPE|IThenable.<TYPE>)=} opt_value
+     * @return {!Promise.<TYPE>}
+     * @template TYPE
+     */
+    promise$$Promise.resolve = function(opt_value) {}
+
+
+    /**
+     * @param {*=} opt_error
+     * @return {!Promise}
+     */
+    promise$$Promise.reject = function(opt_error) {}
+
+
+    function promise$$subscribe(parent, child, onFulfillment, onRejection) {
+      var subscribers = parent._subscribers || (parent._subscribers = []), length = subscribers.length
+      subscribers[length] = child;
+      subscribers[length + promise$$FULFILLED] = onFulfillment;
+      subscribers[length + promise$$REJECTED]  = onRejection;
+    }
+
+    function promise$$publish(promise, settled) {
+      var child, callback, subscribers = promise._subscribers, detail = promise._detail;
+      if (!subscribers) return
+
+      for (var i = 0; i < subscribers.length; i += 3) {
+        child = subscribers[i];
+        callback = subscribers[i + settled];
+        promise$$invokeCallback(settled, child, callback, detail);
+      }
+
+      promise._subscribers = void 0;
+    }
+
+    function promise$$invokeCallback(settled, promise, callback, detail) {
+      var value, error, succeeded, failed, hasCallback = base$$isFunction(callback)
+
+      if (hasCallback) {
+        try {
+          value = callback(detail);
+          succeeded = true;
+        } catch(e) {
+          failed = true;
+          error = e;
+        }
+      } else {
+        value = detail;
+        succeeded = true;
+      }
+
+      if (hasCallback && succeeded) {
+        promise$$resolve(promise, value);
+      } else if (failed) {
+        promise$$reject(promise, error);
+      } else if (settled === promise$$FULFILLED) {
+        promise$$resolve(promise, value);
+      } else if (settled === promise$$REJECTED) {
+        promise$$reject(promise, value);
+      }
+    }
+
+    function promise$$resolve(promise, value) {
+      if (promise._state !== promise$$PENDING) return;
+      promise._state = promise$$SEALED;
+      promise._detail = value;
+      asap$$default(promise$$publishFulfillment, promise);
+    }
+
+    function promise$$reject(promise, reason) {
+      if (promise._state !== promise$$PENDING) return;
+      promise._state = promise$$SEALED;
+      promise._detail = reason;
+      asap$$default(promise$$publishRejection, promise);
+    }
+
+    function promise$$publishFulfillment(promise) {
+      promise$$publish(promise, promise._state = promise$$FULFILLED);
+    }
+
+    function promise$$publishRejection(promise) {
+      promise$$publish(promise, promise._state = promise$$REJECTED);
+    }
+
+    var promise$$default = promise$$Promise;
 
     var dom$$_hasClassList = !!window['domTokenList'];
 
@@ -1351,6 +1582,389 @@
       return fn
     }
 
+    /** @return {!XMLHttpRequest} */
+    var xhr$$xhrRequest = typeof XMLHttpRequest !== 'undefined' ?
+      function() { return new XMLHttpRequest() } :
+      function() { return new ActiveXObject('Microsoft.XMLHTTP') }
+
+    /** @type {number} */
+    var xhr$$_requestCount = 0;
+
+    /** @type {{
+     *   headers: (Object.<string>|undefined),
+     *   mimeType: (string|undefined),
+     *   withCredentials: (boolean|undefined),
+     *   timeout: (number|undefined),
+     *   xssiPrefix: (string|undefined)
+     * }|undefined} */
+    var xhr$$_opts;
+
+    /**
+     * @param {string} method
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null=} opt_data
+     * @param {{
+     *   headers: (Object.<string>|undefined),
+     *   mimeType: (string|undefined),
+     *   withCredentials: (boolean|undefined),
+     *   timeout: (number|undefined),
+     *   xssiPrefix: (string|undefined)
+     * }=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$send(method, url, opt_data, opt_options) {
+      var id = (xhr$$_requestCount++)
+        // TODO should this be handled here?
+        // if (opt_data) { // TODO check if urlencoded?
+        //     opt_data = toQueryString(opt_data);
+        // }
+
+        // TODO create a scope object which is bound to promise
+        // {  method:
+        //    url:...
+        //    data:...
+        //    xhr:...
+        //    timing:...
+        // }
+
+      var req = xhr$$xhrRequest()
+      var p  = new promise$$default(function(resolve, reject) {
+        var scope = {xhr:req} // todo check??
+        xhr$$sendRequest(req, method, url, opt_data, opt_options, resolve, reject, scope)
+      })
+      return p
+    }
+
+    /**
+     * note null or undefined clears options
+     * @param {{
+     *   headers: (Object.<string>|undefined),
+     *   mimeType: (string|undefined),
+     *   withCredentials: (boolean|undefined),
+     *   timeout: (number|undefined),
+     *   xssiPrefix: (string|undefined)
+     * }=} o
+     */
+    xhr$$send.setDefaults = function (o) {
+      xhr$$_opts = o && /** @type {xhr.Options} */(base$$extend(xhr$$_opts || {}, o))
+    }
+
+
+    /**
+     * @param {string} url
+     * @param {Object|string} data
+     * @return {string}
+     */
+    xhr$$send.encodeURL = function(url, data) {
+      if (data) url += (url.indexOf('?') < 0 ? '?' : '&') + xhr$$toQueryString(data)
+      return url
+    }
+
+
+    /**
+     * @param {string} url
+     * @param {Object=} opt_data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$GET(url, opt_data, opt_options) {
+      return xhr$$send('GET', opt_data ? xhr$$send.encodeURL(url, opt_data) : url, void 0, opt_options)
+    }
+
+    /**
+     * @param {string} url
+     * @param {Object=} opt_data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$HEAD(url, opt_data, opt_options) {
+      return xhr$$send('HEAD', opt_data ? xhr$$send.encodeURL(url, opt_data) : url, void 0, opt_options)
+    }
+
+    /**
+     * @param {string} url
+     * @param {Object=} opt_data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$DELETE(url, opt_data, opt_options) {
+      return xhr$$send('DELETE', opt_data ? xhr$$send.encodeURL(url, opt_data) : url, void 0, opt_options)
+    }
+
+    /**
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null} data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$POST(url, data, opt_options) {
+      return xhr$$send('POST', url, data, opt_options)
+    }
+
+    /**
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null} data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$PUT(url, data, opt_options) {
+      return xhr$$send('PUT', url, data, opt_options)
+    }
+
+    /**
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null} data
+     * @param {xhr.Options=} opt_options
+     * @return {!Promise}
+     */
+    function xhr$$PATCH(url, data, opt_options) {
+      return xhr$$send('PATCH', url, data, opt_options)
+    }
+
+    /**
+     * @param {string} method
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null=} opt_data
+     * @param {xhr.Options=} opt_options
+     * @param {function(?)=} opt_callback
+     * @param {function(xhr.Error)=} opt_errback
+     * @param {*=} opt_scope
+     * @return {!XMLHttpRequest}
+     */
+    function xhr$$request(method, url, opt_data, opt_options, opt_callback, opt_errback, opt_scope) {
+      var req = xhr$$xhrRequest();
+      xhr$$sendRequest(req, method, url, opt_data, opt_options, opt_callback, opt_errback, req);
+      return req;
+    }
+
+    /**
+     * @param {!XMLHttpRequest} req
+     * @param {string} method
+     * @param {string} url
+     * @param {ArrayBuffer|Blob|Document|FormData|Object|string|null=} opt_data
+     * @param {xhr.Options=} opt_options
+     * @param {function(?)=} opt_callback
+     * @param {function(xhr.Error)=} opt_errback
+     * @param {*=} opt_scope
+     * @private
+     */
+    function xhr$$sendRequest(req, method, url, opt_data, opt_options, opt_callback, opt_errback, opt_scope) {
+      var timer, /** @type {*} */scope, /** @type {xhr.Options|undefined} */ options, hasContentType = false;
+
+      if (xhr$$_opts || opt_options) options = /** @type {xhr.Options|undefined} */(base$$extend({}, xhr$$_opts, opt_options))
+
+      method = method.toUpperCase();
+
+      req.onreadystatechange = function() {
+    //        todo handle each type of event
+    //        console.log(req.readyState, arguments)
+        if (req.readyState === 4) { // complete
+          clearTimeout(timer);
+          if (xhr$$_isSuccess(req.status)) {
+            var response, prefix = options && options.xssiPrefix;
+            if (prefix && req.responseText.indexOf(prefix) === 0) {
+              response = req.responseText.slice(prefix.length)
+            } else {
+              response = req.response
+            }
+            if (opt_callback) opt_callback.call(scope, response);
+          } else if (opt_errback) {
+            opt_errback.call(scope, new xhr$$HTTPError(req.status, method, url, req));
+          }
+        }
+      }
+
+      try {
+        req.open(method, url, true);
+      } catch (/** @type {Error}*/ e1) {
+        if (opt_errback) opt_errback.call(scope, new xhr$$XHRError('Open failed: ' + e1.message, method, url, req));
+        return
+      }
+
+      if (options) {
+        var key, headers = options.headers;
+        if (headers) {
+          for (key in headers) {
+            if (key in headers)
+              req.setRequestHeader(key, headers[key]);
+          }
+          hasContentType = 'Content-Type' in headers;
+        }
+
+        if (options.withCredentials) req.withCredentials = options.withCredentials
+        if (options.mimeType) req.overrideMimeType(options.mimeType)
+
+        if (options.timeout > 0) {
+          timer = setTimeout(function() {
+            req.onreadystatechange = base$$noop;
+            req.abort();
+            if (opt_errback) opt_errback.call(scope, new xhr$$TimeoutError(method, url, req));
+          }, options.timeout);
+        }
+      }
+
+      // todo make extendable through an interceptor
+      if( opt_data ) {
+        // todo is this the right way of soloving this?
+        if (!hasContentType) {
+          req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          opt_data = xhr$$toQueryString(opt_data);
+        }
+      }
+
+      try {
+        req.send(opt_data)
+      } catch (/** @type {Error}*/ e2) {
+        req.onreadystatechange = base$$noop;
+        clearTimeout(timer);
+        if (opt_errback) opt_errback.call(scope, new xhr$$XHRError('Send failed: ' + e2.message, method, url, req));
+      }
+    }
+
+    /**
+     * @param {Object|string} o
+     * @return {string}
+     */
+    function xhr$$toQueryString(o) {
+      var prefix, i, a, /** @type {string} */s = ""
+
+      /**
+       * @param {string} key
+       * @param {function():string|string} value
+       */
+      function add(key, value) {
+        s.length > 0 && (s += "&")
+        s += encodeURIComponent(key);
+        if ('function' === typeof value) value = value()
+        if (value) s += '=' + encodeURIComponent(value)
+      }
+
+      /**
+       * @param {string} prefix
+       * @param {*} obj
+       */
+      function buildParams(prefix, obj) {
+        var name, a, i, v;
+        if (base$$isArray(obj)) {
+          a = /** @type {Array.<*>} */(obj)
+          for (i = 0; a && i < a.length; i++) {
+            v = a[i]
+            buildParams(prefix + '[' + (typeof v === 'object' ? i : '') + ']', v)
+          }
+        } else if (base$$isObject(obj)) {
+          for (name in obj) {
+            if (name in obj)
+              buildParams(prefix + '[' + name + ']', obj[name])
+          }
+        } else {
+          add(prefix, /** @type {string}*/(obj))
+        }
+      }
+
+      if (base$$isArray(o)) {
+        a = /** @type {Array.<*>} */(o)
+        for (i = 0; i < a.length; i++) {
+          add(o[i]['name'], a[i]['value']) // assumes inputs
+        }
+      } else {
+        for (prefix in o) {
+          if (o.hasOwnProperty(prefix)) buildParams(prefix, o[prefix])
+        }
+      }
+      return s
+    }
+
+    /**
+     * @param {string} message
+     * @param {string} method
+     * @param {string} url
+     * @param {!XMLHttpRequest} req
+     * @extends {Error}
+     * @constructor
+     */
+    function xhr$$XHRError(message, method, url, req) {
+      /** @type {string} */
+      this.method = method;
+
+      /** @type {string} */
+      this.url = url;
+
+      /** @type {!XMLHttpRequest} */
+      this.xhr = req;
+
+      this.name = this.constructor.name
+      this.message = message + ', ' + method + ' ' + url
+      if (Error.captureStackTrace) {
+          Error.captureStackTrace(this, this.constructor)
+      } else {
+        this.stack = (new Error()).stack;
+      }
+    }
+    xhr$$XHRError.prototype = Error.prototype;
+    xhr$$XHRError.prototype.constructor = xhr$$XHRError;
+    xhr$$XHRError.prototype.toString = function() { return this.name + ': ' + this.message }
+
+    /**
+     * @param {number} status
+     * @param {string} method
+     * @param {string} url
+     * @param {!XMLHttpRequest} req
+     * @extends {xhr.Error}
+     * @constructor
+     */
+    function xhr$$HTTPError(status, method, url, req) {
+      xhr$$XHRError.call(this, 'Request Failed, ' + status, method, url, req)
+      /** @type {number} */
+      this.status = status;
+    }
+    xhr$$HTTPError.prototype = xhr$$XHRError.prototype;
+    xhr$$HTTPError.prototype.constructor = xhr$$HTTPError;
+
+    /**
+     * @param {string} method
+     * @param {string} url
+     * @param {!XMLHttpRequest} req
+     * @extends {xhr.Error}
+     * @constructor
+     */
+    function xhr$$TimeoutError(method, url, req) {
+      xhr$$XHRError.call(this, 'Timeout', method, url, req)
+    }
+    xhr$$TimeoutError.prototype = xhr$$XHRError.prototype;
+    xhr$$TimeoutError.prototype.constructor = xhr$$TimeoutError;
+
+    /**
+     * @param {string} method
+     * @param {string} url
+     * @param {!XMLHttpRequest} req
+     * @extends {xhr.Error}
+     * @constructor
+     */
+    function xhr$$AbortError(method, url, req) {
+      xhr$$XHRError.call(this, 'Abort', method, url, req)
+    }
+    xhr$$AbortError.prototype = xhr$$XHRError.prototype;
+    xhr$$AbortError.prototype.constructor = xhr$$AbortError;
+
+    /**
+     * @param {number} status
+     * @return {boolean}
+     * @private
+     */
+    function xhr$$_isSuccess(status) {
+      switch (status) {
+      case 200: // ok
+      case 201: // created
+      case 202: // accepted
+      case 204: // no content
+      case 206: // partial
+      case 304: // not modified
+      case 1223: // ie...
+        return true;
+      }
+      return false;
+    }
+
     var analytics$$GA_ENDPOINT = '//www.google-analytics.com/collect?v=1';
 
     /**
@@ -1567,6 +2181,8 @@
       Listener: event$$Listener
     }
 
+    browser$$cohesive.Promise = promise$$default;
+
     browser$$cohesive.dom = {
       listClasses:dom$$listClasses,
       containsClass:dom$$containsClass,
@@ -1590,6 +2206,15 @@
       listener:dom$$listener,
       throttledListener:dom$$throttledListener
     }
+
+    xhr$$send.GET     = xhr$$GET;
+    xhr$$send.HEAD    = xhr$$HEAD;
+    xhr$$send.DELETE  = xhr$$DELETE;
+    xhr$$send.POST    = xhr$$POST;
+    xhr$$send.PUT     = xhr$$PUT;
+    xhr$$send.PATCH   = xhr$$PATCH;
+    xhr$$send.request = xhr$$request;
+    browser$$cohesive.xhr = xhr$$send;
 
     browser$$cohesive.ready = $$ready$$default;
 

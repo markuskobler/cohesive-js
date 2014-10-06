@@ -1,5 +1,5 @@
 /* global cohesive */
-describe('cohesive base', function() {
+describe('cohesive base (browser)', function() {
   it('should expose `cohesive` in the global path', function() {
     assert.isNotNull(cohesive)
   });

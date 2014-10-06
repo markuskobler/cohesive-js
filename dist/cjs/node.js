@@ -1,6 +1,6 @@
 "use strict";
 ;
-var base$$ = require("./base"), asap$$ = require("./asap"), event$$ = require("./event");
+var base$$ = require("./base"), asap$$ = require("./asap"), event$$ = require("./event"), promise$$ = require("./promise");
 
 var cohesive = {
   isUndefined:base$$.isUndefined,
@@ -52,15 +52,10 @@ cohesive.event = {
   Listener: event$$.Listener
 }
 
-exports["default"] = cohesive;
+cohesive.Promise = promise$$.default;
 
-if (typeof define === 'function' && define.amd) {
-  define(function() { return cohesive; })
-} else if (typeof module !== 'undefined' && module.exports) {
-  module.exports = cohesive
-} else if (this !== void 0) {
-  this['cohesive'] = cohesive
-}
+
+module.exports = cohesive;
 ;
 
 //# sourceMappingURL=node.js.map
