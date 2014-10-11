@@ -10,7 +10,7 @@
         "src": "./lib"
     },
     "scripts": {
-        "test": "jshint lib test && ./node_modules/karma/bin/karma start karma.conf.js --singleRun && istanbul cover _mocha -- -r test/node/init.js --reporter spec test/common/*_test.js"
+        "test": "jshint lib test && ./node_modules/karma/bin/karma start karma.conf.js --singleRun && istanbul cover _mocha -- -r test/node/init.js --reporter spec test/common/*_test.js test/node/*_test.js"
     },
     "devDependencies": {
         "es6-module-transpiler": "0.8.x",

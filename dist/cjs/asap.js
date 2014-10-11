@@ -48,4 +48,3 @@ var asap = _Observer ? (function() {
 exports["default"] = asap;
 ;
 
-//# sourceMappingURL=asap.js.map

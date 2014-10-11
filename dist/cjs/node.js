@@ -58,4 +58,3 @@ cohesive.Promise = promise$$.default;
 module.exports = cohesive;
 ;
 
-//# sourceMappingURL=node.js.map

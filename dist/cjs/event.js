@@ -389,4 +389,3 @@ function fireListeners(type, evt) {
 
 exports.listen = listen, exports.unlisten = unlisten, exports.listenOnce = listenOnce, exports.Event = Event, exports.EventTarget = EventTarget, exports.Listener = Listener;
 
-//# sourceMappingURL=event.js.map

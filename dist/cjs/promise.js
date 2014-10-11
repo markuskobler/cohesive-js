@@ -17,24 +17,28 @@ var REJECTED  = 2;
 var Promise = function(resolver) {
   /** @type {number|undefined} */
   this._state       = PENDING
+
   this._subscribers = void 0
+
   this._detail      = void 0
+
+  if (base$$.noop === resolver) return
+  if (!base$$.isFunction(resolver)) throw new TypeError("requires a resolver function")
+  if (!(this instanceof Promise)) throw new TypeError("Promise needs new")
+
   invokeResolver(resolver, this)
-};
+}
+Promise.prototype.constructor = Promise;
 
 function invokeResolver(resolver, promise) {
-  function resolvePromise(value) {
-    resolve(promise, value)
-  }
-
-  function rejectPromise(reason) {
-    reject(promise, reason)
-  }
-
   try {
-    resolver(resolvePromise, rejectPromise)
+    resolver(function resolvePromise(value) {
+      resolve(promise, value)
+    }, function rejectPromise(reason) {
+      reject(promise, reason)
+    })
   } catch(e) {
-    rejectPromise(e)
+    reject(promise, e)
   }
 }
 
@@ -46,11 +50,15 @@ function invokeResolver(resolver, promise) {
  * @template RESULT
  */
 Promise.prototype.then = function(opt_success, opt_errback, opt_progress) {
-  var child = new Promise(base$$.noop), parent = this, callbacks = arguments
-  if (this._state) {
+  var state = this._state, child, detail
+
+  if (state === FULFILLED && !opt_success || state === REJECTED && !opt_errback) return this
+
+  child = new Promise(base$$.noop)
+  if (state) {
+    detail = this._detail
     asap$$.default(function invokePromiseCallback() {
-      var state = parent._state - 1
-      invokeCallback(parent._state, child, callbacks[state], parent._detail)
+      invokeCallback(state, child, (state - 1) ? opt_errback : opt_success, detail)
     })
   } else {
     subscribe(this, child, opt_success, opt_errback)
@@ -81,8 +89,7 @@ Promise.prototype.fulfilled = function(success, opt_scope, var_args) {
  * @return {IThenable.<RESULT>}
  * @template RESULT
  */
-Promise.prototype.caught =
-Promise.prototype['catch'] = function(errback, opt_scope, var_args) {
+Promise.prototype.caught = function(errback, opt_scope, var_args) {
   switch (arguments.length) {
   case 0:
   case 1: return this.then(void 0, errback, void 0)
@@ -117,8 +124,7 @@ Promise.prototype.progressed = function(callback, opt_scope, var_args) {
  * @return {IThenable.<RESULT>}
  * @template RESULT
  */
-Promise.prototype.lastly =
-Promise.prototype['finally'] = function(callback, opt_scope, var_args) {
+Promise.prototype.lastly = function(callback, opt_scope, var_args) {
   if (!callback) return this.then(void 0, void 0, void 0)
   var fn
   switch (arguments.length) {
@@ -152,14 +158,17 @@ Promise.prototype.abort = function() {
  * @return {!Promise.<TYPE>}
  * @template TYPE
  */
-Promise.resolve = function(opt_value) {}
-
+Promise.resolve = function(opt_value) {
+  return new Promise(function(resolve){ resolve(opt_value) })
+}
 
 /**
  * @param {*=} opt_error
  * @return {!Promise}
  */
-Promise.reject = function(opt_error) {}
+Promise.reject = function(opt_error) {
+  return new Promise(function(_, reject){ reject(opt_error) })
+}
 
 
 function subscribe(parent, child, onFulfillment, onRejection) {
@@ -176,7 +185,11 @@ function publish(promise, settled) {
   for (var i = 0; i < subscribers.length; i += 3) {
     child = subscribers[i];
     callback = subscribers[i + settled];
-    invokeCallback(settled, child, callback, detail);
+    if (child) {
+      invokeCallback(settled, child, callback, detail);
+    } else {
+      callback(detail)
+    }
   }
 
   promise._subscribers = void 0;
@@ -186,38 +199,140 @@ function invokeCallback(settled, promise, callback, detail) {
   var value, error, succeeded, failed, hasCallback = base$$.isFunction(callback)
 
   if (hasCallback) {
+    // TODO optimise tryCatch https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax
     try {
-      value = callback(detail);
-      succeeded = true;
+      value = callback(detail)
+      succeeded = true
     } catch(e) {
-      failed = true;
-      error = e;
+      failed = true
+      error = e
+    }
+
+    if (value === promise) {
+      reject(promise, new TypeError('Same promise returned'))
+      return
     }
   } else {
-    value = detail;
-    succeeded = true;
+    value = detail
+    succeeded = true
   }
 
-  if (hasCallback && succeeded) {
+  if (promise._state !== PENDING) {
+    // noop
+  } else if (hasCallback && succeeded) {
     resolve(promise, value);
   } else if (failed) {
     reject(promise, error);
   } else if (settled === FULFILLED) {
-    resolve(promise, value);
+    fulfill(promise, value);
   } else if (settled === REJECTED) {
     reject(promise, value);
   }
 }
 
 function resolve(promise, value) {
-  if (promise._state !== PENDING) return;
+  if (promise === value) {
+    fulfill(promise, value);
+  } else if (base$$.isObject(value)) {
+    handleMaybeThenable(promise, value);
+  } else {
+    fulfill(promise, value);
+  }
+}
+
+function ErrorObject() {
+  this.error = null;
+}
+
+var GET_THEN_ERROR = new ErrorObject();
+
+function getThen(promise) {
+  try {
+    return promise.then;
+  } catch(error) {
+    GET_THEN_ERROR.error = error;
+    return GET_THEN_ERROR;
+  }
+}
+
+
+function handleMaybeThenable(promise, maybeThenable) {
+  if (maybeThenable.constructor === Promise) {
+    handleOwnThenable(promise, maybeThenable);
+  } else {
+    var then = getThen(maybeThenable);
+    if (then === GET_THEN_ERROR) {
+      reject(promise, GET_THEN_ERROR.error);
+    } else if (then === void 0) {
+      fulfill(promise, maybeThenable);
+    } else if (base$$.isFunction(then)) {
+      handleForeignThenable(promise, maybeThenable, then);
+    } else {
+      fulfill(promise, maybeThenable);
+    }
+  }
+}
+
+function handleOwnThenable(promise, thenable) {
+  if (thenable._state === FULFILLED) {
+    fulfill(promise, thenable._detail);
+  } else if (promise._state === REJECTED) {
+    reject(promise, thenable._detail);
+  } else {
+    subscribe(thenable, void 0, function(value) {
+      if (thenable !== value) {
+        resolve(promise, value);
+      } else {
+        fulfill(promise, value);
+      }
+    }, function(reason) {
+      reject(promise, reason);
+    });
+  }
+}
+
+function handleForeignThenable(promise, thenable, then) {
+  asap$$.default(function(promise) {
+    var sealed = false;
+    var error = tryThen(then, thenable, function(value) {
+      if (sealed) { return; }
+      sealed = true;
+      if (thenable !== value) {
+        resolve(promise, value);
+      } else {
+        fulfill(promise, value);
+      }
+    }, function(reason) {
+      if (sealed) { return; }
+      sealed = true;
+
+      reject(promise, reason);
+    }, 'Settle: unknown promise');
+
+    if (!sealed && error) {
+      sealed = true;
+      reject(promise, error);
+    }
+  }, promise);
+}
+
+function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+  try {
+    then.call(value, fulfillmentHandler, rejectionHandler);
+  } catch(e) {
+    return e;
+  }
+}
+
+function fulfill(promise, value) {
+  if (promise._state !== PENDING) return
   promise._state = SEALED;
   promise._detail = value;
   asap$$.default(publishFulfillment, promise);
 }
 
 function reject(promise, reason) {
-  if (promise._state !== PENDING) return;
+  if (promise._state !== PENDING) return
   promise._state = SEALED;
   promise._detail = reason;
   asap$$.default(publishRejection, promise);
@@ -234,4 +349,3 @@ function publishRejection(promise) {
 exports["default"] = Promise;
 ;
 
-//# sourceMappingURL=promise.js.map

@@ -1,6 +1,6 @@
 /* jshint node:true */
 var chai = require('chai');
-//chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
 
 GLOBAL.chai     = chai.chai;
